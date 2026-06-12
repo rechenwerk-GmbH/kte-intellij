@@ -112,7 +112,7 @@ public class KteTemplateSignatureServiceTest extends KteK2FixtureSupport {
     }
 
     public void testReturnsEmptySignatureForNonKteTemplate() {
-        myFixture.configureByText("card.jte", """
+        myFixture.configureByText("card.txt", """
                 @param String title
                 """);
 

@@ -77,21 +77,7 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
         assertTrue(resolved.getText().contains("profile: Profile"));
     }
 
-    public void testJteChildParamNameReferenceResolvesToKteSignatureParam() {
-        addTemplateRoot();
-        addSignatureTemplate();
-
-        myFixture.configureByText("caller.jte", """
-                @template.components.signatureKitchenSink(pro<caret>file = broken, tags = broken, content = broken)
-                """);
-
-        PsiElement resolved = resolveReferenceAtCaret();
-
-        assertEquals("signatureKitchenSink.kte", resolved.getContainingFile().getName());
-        assertTrue(resolved.getText().contains("profile: Profile"));
-    }
-
-    public void testReferencesSearchFindsKteAndJteChildParamUsages() throws Exception {
+    public void testReferencesSearchFindsKteChildParamUsages() throws Exception {
         addTemplateRoot();
         PsiFile child = (PsiFile) myFixture.addFileToProject("components/signatureKitchenSink.kte", """
                 @import com.example.Profile
@@ -99,10 +85,10 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
                 @param tags: List<String>
                 @param content: gg.jte.Content
                 """);
-        myFixture.addFileToProject("caller.kte", """
+        myFixture.addFileToProject("callerA.kte", """
                 @template.components.signatureKitchenSink(profile = broken, tags = broken, content = broken)
                 """);
-        myFixture.addFileToProject("caller.jte", """
+        myFixture.addFileToProject("callerB.kte", """
                 @template.components.signatureKitchenSink(profile = broken, tags = broken, content = broken)
                 """);
 
@@ -117,10 +103,10 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
                 .toList()
                 .toString();
         assertTrue(referenceSummary, references.stream().anyMatch(reference ->
-                "caller.kte".equals(reference.getElement().getContainingFile().getName()) &&
+                "callerA.kte".equals(reference.getElement().getContainingFile().getName()) &&
                         "profile".equals(reference.getCanonicalText())));
         assertTrue(referenceSummary, references.stream().anyMatch(reference ->
-                "caller.jte".equals(reference.getElement().getContainingFile().getName()) &&
+                "callerB.kte".equals(reference.getElement().getContainingFile().getName()) &&
                         "profile".equals(reference.getCanonicalText())));
     }
 
@@ -139,22 +125,7 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
                 """, myFixture.getFile().getText());
     }
 
-    public void testChildParamNameRenameUpdatesJteCallSiteForKteChild() {
-        addTemplateRoot();
-        addSignatureTemplate();
-
-        myFixture.configureByText("caller.jte", """
-                @template.components.signatureKitchenSink(pro<caret>file = broken, tags = broken, content = broken)
-                """);
-
-        renameReferenceAtCaret("account");
-
-        assertEquals("""
-                @template.components.signatureKitchenSink(account = broken, tags = broken, content = broken)
-                """, myFixture.getFile().getText());
-    }
-
-    public void testSourceChildParamRenameUpdatesKteAndJteCallSites() {
+    public void testSourceChildParamRenameUpdatesKteCallSites() {
         addTemplateRoot();
         PsiFile child = (PsiFile) myFixture.addFileToProject("components/signatureKitchenSink.kte", """
                 @import com.example.Profile
@@ -162,10 +133,10 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
                 @param tags: List<String>
                 @param content: gg.jte.Content
                 """);
-        PsiFile kteCaller = (PsiFile) myFixture.addFileToProject("caller.kte", """
+        PsiFile firstCaller = (PsiFile) myFixture.addFileToProject("callerA.kte", """
                 @template.components.signatureKitchenSink(profile = broken, tags = broken, content = broken)
                 """);
-        PsiFile jteCaller = (PsiFile) myFixture.addFileToProject("caller.jte", """
+        PsiFile secondCaller = (PsiFile) myFixture.addFileToProject("callerB.kte", """
                 @template.components.signatureKitchenSink(profile = broken, tags = broken, content = broken)
                 """);
 
@@ -183,10 +154,10 @@ public class KteTemplateReferenceRefactoringTest extends KteK2FixtureSupport {
                 """, child.getText());
         assertEquals("""
                 @template.components.signatureKitchenSink(account = broken, tags = broken, content = broken)
-                """, kteCaller.getText());
+                """, firstCaller.getText());
         assertEquals("""
                 @template.components.signatureKitchenSink(account = broken, tags = broken, content = broken)
-                """, jteCaller.getText());
+                """, secondCaller.getText());
     }
 
     private Collection<PsiReference> searchReferencesInFileOffEdt(PsiElement resolved, PsiFile file) throws Exception {

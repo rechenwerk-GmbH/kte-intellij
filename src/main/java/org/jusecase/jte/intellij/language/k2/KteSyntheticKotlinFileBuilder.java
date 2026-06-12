@@ -443,7 +443,7 @@ public final class KteSyntheticKotlinFileBuilder {
                 }
                 if (sibling instanceof JtePsiJavaInjection ||
                         sibling instanceof JtePsiContent ||
-                        sibling instanceof JtePsiParamName) {
+                        sibling instanceof KtePsiParamName) {
                     return false;
                 }
             }

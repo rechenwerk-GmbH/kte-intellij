@@ -14,6 +14,6 @@ public class KteLanguage extends Language implements TemplateLanguage {
     @Override
     @NotNull
     public String getDisplayName() {
-        return "kte";
+        return "KTE";
     }
 }

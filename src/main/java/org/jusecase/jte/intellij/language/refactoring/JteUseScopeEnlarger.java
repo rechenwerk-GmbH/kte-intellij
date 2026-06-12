@@ -2,7 +2,6 @@ package org.jusecase.jte.intellij.language.refactoring;
 
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiParameter;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.UseScopeEnlarger;
@@ -18,17 +17,6 @@ public class JteUseScopeEnlarger extends UseScopeEnlarger {
     public SearchScope getAdditionalUseScope(@NotNull PsiElement element) {
         if (element instanceof JtePsiParam) {
             return GlobalSearchScope.projectScope(element.getProject());
-        } else if (element instanceof PsiParameter) {
-            PsiFile containingFile = element.getContainingFile();
-            if (containingFile == null) {
-                return null;
-            }
-
-            if (!containingFile.getName().endsWith(".jte")) {
-                return null;
-            }
-
-            return new JteSearchScope(element.getProject());
         } else if (element instanceof KtParameter) {
             // .kte Kotlin references are source-mapped from template PSI; this only broadens the
             // search space for Kotlin declarations that can be referenced from .kte files.

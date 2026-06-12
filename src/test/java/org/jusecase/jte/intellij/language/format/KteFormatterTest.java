@@ -12,7 +12,7 @@ import com.intellij.util.IncorrectOperationException;
 
 import java.util.Objects;
 
-public class JteFormatterTest extends LightIdeaTestCase {
+public class KteFormatterTest extends LightIdeaTestCase {
 
     public void testEmptyFile() {
         reformatCode("", "");
@@ -217,7 +217,7 @@ public class JteFormatterTest extends LightIdeaTestCase {
 
     @SuppressWarnings("Convert2Lambda")
     private void reformatCode(final String code, String expectedResult) throws IncorrectOperationException {
-        final PsiFile file = createFile("test.jte", code);
+        final PsiFile file = createFile("test.kte", code);
 
         final PsiDocumentManager manager = PsiDocumentManager.getInstance(getProject());
         final Document document = manager.getDocument(file);

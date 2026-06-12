@@ -43,12 +43,13 @@ dependencies {
 }
 
 intellijPlatform {
+    instrumentCode = false
     pluginConfiguration {
-        id = "org.jusecase.jte-intellij"
-        name = "jte"
-        version = "2.2.4"
+        id = "de.rechenwerk.kte"
+        name = "KTE"
+        version = "0.1.0"
     }
-    projectName = "jte-intellij"
+    projectName = "kte-intellij"
     publishing {
         token = System.getenv("ORG_GRADLE_PROJECT_intellijPublishToken")
     }

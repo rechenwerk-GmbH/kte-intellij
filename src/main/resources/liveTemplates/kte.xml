@@ -1,50 +1,50 @@
-<templateSet group="jte">
-    <template name="@import" value="@import $IMPORT$" description="jte import" toReformat="false" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+<templateSet group="kte">
+    <template name="@import" value="@import $IMPORT$" description="KTE import" toReformat="false" toShortenFQNames="false">
+        <context><option name="kte" value="true"/></context>
         <variable name="IMPORT" alwaysStopAt="true" expression="complete()" />
     </template>
 
-    <template name="@param" value="@param $TYPE$ $ID$" description="jte param" toReformat="false" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+    <template name="@param" value="@param $TYPE$ $ID$" description="KTE param" toReformat="false" toShortenFQNames="false">
+        <context><option name="kte" value="true"/></context>
         <variable name="TYPE" alwaysStopAt="true" expression="complete()" />
         <variable name="ID" alwaysStopAt="true" expression="suggestVariableName()" />
     </template>
 
     <template name="@if" value="@if($CONDITION$)&#10;$END$&#10;@endif" description="jte if statement" toReformat="true" toShortenFQNames="false">
         <variable name="CONDITION" expression="" defaultValue="" alwaysStopAt="true" />
-        <context><option name="jte" value="true"/></context>
+        <context><option name="kte" value="true"/></context>
     </template>
 
     <template name="@elseif" value="@elseif($CONDITION$)&#10;$END$" description="jte elseif statement" toReformat="true" toShortenFQNames="false">
         <variable name="CONDITION" expression="" defaultValue="" alwaysStopAt="true" />
-        <context><option name="jte" value="true"/></context>
+        <context><option name="kte" value="true"/></context>
     </template>
 
     <template name="@else" value="@else&#10;$END$" description="jte else statement" toReformat="true" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+        <context><option name="kte" value="true"/></context>
     </template>
 
     <template name="@for" value="@for($CONDITION$)&#10;$END$&#10;@endfor" description="jte for statement" toReformat="true" toShortenFQNames="false">
         <variable name="CONDITION" expression="" defaultValue="" alwaysStopAt="true" />
-        <context><option name="jte" value="true"/></context>
+        <context><option name="kte" value="true"/></context>
     </template>
 
-    <template name="@template" value="@template.$NAME$$END$" description="jte template" toReformat="false" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+    <template name="@template" value="@template.$NAME$$END$" description="KTE template" toReformat="false" toShortenFQNames="false">
+        <context><option name="kte" value="true"/></context>
         <variable name="NAME" expression="complete()" alwaysStopAt="true" />
     </template>
 
-    <template name="${" value="$${$EXPR$$END$}" description="jte output expression" toReformat="false" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+    <template name="${" value="$${$EXPR$$END$}" description="KTE output expression" toReformat="false" toShortenFQNames="false">
+        <context><option name="kte" value="true"/></context>
         <variable name="EXPR" alwaysStopAt="false" />
     </template>
 
-    <template name="!{var" value="!{var $NAME$ = $END$;}" description="jte variable declaration" toReformat="false" toShortenFQNames="false">
+    <template name="!{var" value="!{var $NAME$ = $END$;}" description="KTE variable declaration" toReformat="false" toShortenFQNames="false">
         <variable name="NAME" expression="complete()" defaultValue="" alwaysStopAt="true" />
-        <context><option name="jte" value="true"/></context>
+        <context><option name="kte" value="true"/></context>
     </template>
 
-    <template name="@raw" value="@raw$END$@endraw" description="jte raw content" toReformat="false" toShortenFQNames="false">
-        <context><option name="jte" value="true"/></context>
+    <template name="@raw" value="@raw$END$@endraw" description="KTE raw content" toReformat="false" toShortenFQNames="false">
+        <context><option name="kte" value="true"/></context>
     </template>
 </templateSet>

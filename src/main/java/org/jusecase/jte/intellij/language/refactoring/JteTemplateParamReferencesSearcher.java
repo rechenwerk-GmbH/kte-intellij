@@ -14,10 +14,8 @@ import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
-import org.jusecase.jte.intellij.language.JteFileType;
 import org.jusecase.jte.intellij.language.KteFileType;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
-import org.jusecase.jte.intellij.language.psi.JtePsiParamName;
 import org.jusecase.jte.intellij.language.psi.KtePsiParamName;
 
 public class JteTemplateParamReferencesSearcher
@@ -60,7 +58,6 @@ public class JteTemplateParamReferencesSearcher
         if (!processFiles(target, psiManager, FileTypeIndex.getFiles(KteFileType.INSTANCE, scope), consumer)) {
             return;
         }
-        processFiles(target, psiManager, FileTypeIndex.getFiles(JteFileType.INSTANCE, scope), consumer);
     }
 
     private boolean processFiles(@NotNull PsiElement target,
@@ -80,13 +77,6 @@ public class JteTemplateParamReferencesSearcher
                                 @NotNull PsiFile file,
                                 @NotNull Processor<? super PsiReference> consumer) {
         for (KtePsiParamName paramName : PsiTreeUtil.findChildrenOfType(file, KtePsiParamName.class)) {
-            PsiReference reference = paramName.getReference();
-            if (reference != null && reference.isReferenceTo(target) && !consumer.process(reference)) {
-                return false;
-            }
-        }
-
-        for (JtePsiParamName paramName : PsiTreeUtil.findChildrenOfType(file, JtePsiParamName.class)) {
             PsiReference reference = paramName.getReference();
             if (reference != null && reference.isReferenceTo(target) && !consumer.process(reference)) {
                 return false;

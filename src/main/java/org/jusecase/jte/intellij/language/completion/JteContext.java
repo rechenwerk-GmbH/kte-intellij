@@ -5,14 +5,13 @@ import com.intellij.codeInsight.template.TemplateContextType;
 import org.jetbrains.annotations.NotNull;
 
 public class JteContext extends TemplateContextType {
-    @SuppressWarnings("DialogTitleCapitalization") // jte is lower case by default
     protected JteContext() {
-        super( "jte");
+        super("kte");
     }
 
     @Override
     public boolean isInContext(@NotNull TemplateActionContext templateActionContext) {
         String name = templateActionContext.getFile().getName();
-        return name.endsWith(".jte") || name.endsWith(".kte");
+        return name.endsWith(".kte");
     }
 }

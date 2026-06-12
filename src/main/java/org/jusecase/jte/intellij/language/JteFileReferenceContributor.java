@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.psi.KtLiteralStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression;
-import org.jusecase.jte.intellij.language.psi.JtePsiFile;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
@@ -139,7 +138,7 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
 
       @Override
       public PsiElement bindToElement( @NotNull PsiElement element ) throws IncorrectOperationException {
-         if ( element instanceof JtePsiFile || element instanceof KtePsiFile) {
+         if ( element instanceof KtePsiFile) {
             String newPath = ((PsiFileBase)element).getVirtualFile().getPath();
             for ( String basePath : getBasePaths(element) ) {
                int basePathIndex = basePath == null ? -1 : newPath.indexOf(basePath);
@@ -168,7 +167,7 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
             return false;
          }
 
-         return stringValue.endsWith(".jte") || stringValue.endsWith(".kte");
+         return stringValue.endsWith(".kte");
       }
 
       public boolean isClassAcceptable( Class aClass ) {
@@ -192,7 +191,7 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
          }
 
          String stringValue = entry.getText();
-         return stringValue.endsWith(".jte") || stringValue.endsWith(".kte");
+         return stringValue.endsWith(".kte");
       }
 
       public boolean isClassAcceptable( Class aClass ) {

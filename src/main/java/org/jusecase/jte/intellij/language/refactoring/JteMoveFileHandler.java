@@ -21,7 +21,7 @@ import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jusecase.jte.intellij.language.parsing.JteTokenTypes;
+import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
 import org.jusecase.jte.intellij.language.psi.*;
 
 import java.util.*;
@@ -30,7 +30,7 @@ public class JteMoveFileHandler extends MoveFileHandler {
 
     @Override
     public boolean canProcessElement(PsiFile element) {
-        return element instanceof JtePsiFile || element instanceof KtePsiFile;
+        return element instanceof KtePsiFile;
     }
 
     @Override
@@ -123,7 +123,7 @@ public class JteMoveFileHandler extends MoveFileHandler {
         ParserDefinition parserDefinition = LanguageParserDefinitions.INSTANCE.forLanguage(template.getLanguage());
         Lexer lexer = parserDefinition.createLexer(project);
         PsiBuilder psiBuilder = PsiBuilderFactory.getInstance().createBuilder(project, dummyHolder.getTreeElement(), lexer, template.getLanguage(), text);
-        ASTNode node = parserDefinition.createParser(project).parse(JteTokenTypes.HTML_CONTENT, psiBuilder);
+        ASTNode node = parserDefinition.createParser(project).parse(KteTokenTypes.HTML_CONTENT, psiBuilder);
 
         dummyHolder.getTreeElement().rawAddChildren((TreeElement) node);
 

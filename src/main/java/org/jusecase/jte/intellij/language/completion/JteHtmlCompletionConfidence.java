@@ -11,7 +11,6 @@ import com.intellij.psi.xml.XmlText;
 import com.intellij.psi.xml.XmlTokenType;
 import com.intellij.util.ThreeState;
 import org.jetbrains.annotations.NotNull;
-import org.jusecase.jte.intellij.language.parsing.JteTokenTypes;
 import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
 
 /**
@@ -22,7 +21,7 @@ public class JteHtmlCompletionConfidence extends CompletionConfidence {
     @Override
     public ThreeState shouldSkipAutopopup(@NotNull PsiElement contextElement, @NotNull PsiFile psiFile, int offset) {
         IFileElementType fileElementType = psiFile.getFileElementType();
-        if (fileElementType != JteTokenTypes.FILE && fileElementType != KteTokenTypes.FILE) {
+        if (fileElementType != KteTokenTypes.FILE) {
             return ThreeState.UNSURE;
         }
 
