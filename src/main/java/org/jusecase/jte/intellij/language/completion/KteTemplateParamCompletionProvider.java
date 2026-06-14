@@ -25,35 +25,41 @@ public class KteTemplateParamCompletionProvider extends CompletionProvider<Compl
             return;
         }
 
+        addCompletions(jteElement, parameters.getOffset(), result);
+    }
+
+    public static boolean addCompletions(@NotNull PsiElement jteElement,
+                                         int caretOffset,
+                                         @NotNull CompletionResultSet result) {
         if (jteElement.getNode().getElementType() == KteTokenTypes.PARAM_NAME) {
             // The user already started typing, that's okay
             jteElement = jteElement.getParent();
-        } else if (isAfterParamSeparator(jteElement, parameters.getOffset())) {
+        } else if (isAfterParamSeparator(jteElement, caretOffset)) {
             // The KTE lexer can keep "value, <caret>" inside the previous JAVA_INJECTION token.
         } else {
             PsiElement prevSibling = JtePsiUtil.getPrevSiblingIgnoring(jteElement, KteTokenTypes.WHITESPACE);
             if (prevSibling == null) {
-                return;
+                return false;
             }
             IElementType elementType = prevSibling.getNode().getElementType();
             if (elementType != KteTokenTypes.PARAMS_BEGIN && elementType != KteTokenTypes.COMMA && elementType != KteTokenTypes.JAVA_INJECTION) {
-                return;
+                return false;
             }
         }
 
         JtePsiTemplate template = PsiTreeUtil.getParentOfType(jteElement, JtePsiTemplate.class);
         if (template == null) {
-            return;
+            return false;
         }
 
         JtePsiTemplateName templateName = JtePsiUtil.getLastChildOfType(template, JtePsiTemplateName.class);
         if (templateName == null) {
-            return;
+            return false;
         }
 
         PsiFile templateFile = templateName.resolveFile();
         if (templateFile == null) {
-            return;
+            return false;
         }
 
         KteTemplateSignatureService.TemplateSignature signature = KteTemplateSignatureService.resolve(templateFile);
@@ -63,9 +69,10 @@ public class KteTemplateParamCompletionProvider extends CompletionProvider<Compl
                 result.addElement(LookupElementBuilder.create(parameter.name() + " =").withTypeText(parameter.typeText()));
             }
         }
+        return true;
     }
 
-    private boolean isAfterParamSeparator(@NotNull PsiElement element, int caretOffset) {
+    private static boolean isAfterParamSeparator(@NotNull PsiElement element, int caretOffset) {
         if (element.getNode().getElementType() != KteTokenTypes.JAVA_INJECTION) {
             return false;
         }

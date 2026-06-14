@@ -8,15 +8,13 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 
 <h3>Features</h3>
 <ul>
-    <li>KTE file type support for <code>.kte</code> templates.</li>
-    <li>Kotlin K2 resolve, completion, references, documentation, and diagnostics through a synthetic Kotlin model.</li>
+    <li><code>.kte</code> file type support.</li>
+    <li>Kotlin K2 completion, resolve, references, documentation, and diagnostics.</li>
     <li>Template navigation, parameter checks, formatting, folding, brace matching, and live templates.</li>
-    <li>Deterministic source edits for selected KTE diagnostics and quick fixes.</li>
 </ul>
 
 <p>
-This first standalone release uses Kotlin and IntelliJ APIs that are not all stable public plugin APIs.
-It requires IntelliJ IDEA 2026.1 or newer and currently favors K2 semantic support over injected Kotlin syntax highlighting.
+Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin fragments; other Kotlin semantics use a synthetic Kotlin model.
 </p>
     ]]></description>
 
@@ -24,9 +22,9 @@ It requires IntelliJ IDEA 2026.1 or newer and currently favors K2 semantic suppo
 <h3>0.1.0</h3>
 <ul>
     <li>First standalone KTE plugin release.</li>
-    <li>Support <code>.kte</code> templates with Kotlin K2 via a synthetic Kotlin model.</li>
-    <li>Register only KTE file types and actions; Java <code>.jte</code> templates stay with the original jte plugin.</li>
-    <li>Known limitation: Kotlin fragment syntax highlighting does not behave like the old injected Kotlin path.</li>
+    <li>Supports Kotlin K2 semantics for <code>.kte</code> templates.</li>
+    <li>Routes completion through scoped injected Kotlin fragments.</li>
+    <li>Registers only KTE file types and actions.</li>
 </ul>
     ]]></change-notes>
 
@@ -45,6 +43,7 @@ It requires IntelliJ IDEA 2026.1 or newer and currently favors K2 semantic suppo
 
         <lang.elementManipulator forClass="org.jusecase.jte.intellij.language.psi.KtePsiJavaContent"
                                  implementationClass="org.jusecase.jte.intellij.language.KteKotlinContentManipulator"/>
+        <multiHostInjector implementation="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinFragmentInjector"/>
 
         <lang.findUsagesProvider language="KotlinTemplateEngine"
                                  implementationClass="org.jusecase.jte.intellij.language.refactoring.KteFindUsagesProvider"/>
@@ -52,6 +51,10 @@ It requires IntelliJ IDEA 2026.1 or newer and currently favors K2 semantic suppo
                                     implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDocumentationProvider"/>
         <completion.contributor language="KotlinTemplateEngine"
                                 implementationClass="org.jusecase.jte.intellij.language.completion.KteCompletionContributor"/>
+        <completion.contributor language="kotlin"
+                                id="KteInjectedKotlinCompletionContributor"
+                                order="first, before KotlinCompletionContributor"
+                                implementationClass="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinCompletionContributor"/>
 
         <defaultLiveTemplates file="liveTemplates/kte.xml"/>
         <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.JteContext" contextId="kte"/>

@@ -9,7 +9,7 @@ import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.KteLanguage;
-import org.jusecase.jte.intellij.language.k2.KteNativeKotlinSourceCompletionBridge;
+import org.jusecase.jte.intellij.language.k2.KtePublicKotlinCompletionBridge;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;
 import org.jusecase.jte.intellij.language.psi.JtePsiIf;
@@ -24,7 +24,7 @@ import org.jusecase.jte.intellij.language.psi.KtePsiFile;
 import java.util.Optional;
 
 public class KteSyntheticOutputCompletionProvider extends CompletionProvider<CompletionParameters> {
-    private final KteNativeKotlinSourceCompletionBridge nativeCompletionBridge = new KteNativeKotlinSourceCompletionBridge();
+    private final KtePublicKotlinCompletionBridge kotlinCompletionBridge = new KtePublicKotlinCompletionBridge();
 
     @Override
     protected void addCompletions(@NotNull CompletionParameters parameters,
@@ -39,7 +39,7 @@ public class KteSyntheticOutputCompletionProvider extends CompletionProvider<Com
             return;
         }
 
-        nativeCompletionBridge.complete(parameters, result, completionInjection.getContainingFile(), parameters.getOffset());
+        kotlinCompletionBridge.complete(result, completionInjection.getContainingFile(), parameters.getOffset());
     }
 
     @Nullable

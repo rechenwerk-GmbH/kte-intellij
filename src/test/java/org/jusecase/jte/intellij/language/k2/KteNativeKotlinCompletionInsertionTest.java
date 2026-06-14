@@ -5,241 +5,181 @@ public class KteNativeKotlinCompletionInsertionTest extends KteK2FixtureSupport 
         addNoArgTopLevelCompletionFunctions();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("helpers.kte", """
-                    @import com.example.i18n
-                    ${i18<caret>}
-                    """);
+        myFixture.configureByText("helpers.kte", """
+                @import com.example.i18n
+                ${i18<caret>}
+                """);
 
-            chooseCompletion("i18n");
+        chooseCompletion("i18n");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.i18n
-                    ${i18n()}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.i18n
+                ${i18n()}
+                """);
     }
 
     public void testNativeCompletionReplaysAutoImportForTopLevelFunctionFromSourceExpression() {
         addNoArgTopLevelCompletionFunctions();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("helpers.kte", """
-                    ${i18<caret>}
-                    """);
+        myFixture.configureByText("helpers.kte", """
+                ${i18<caret>}
+                """);
 
-            chooseCompletion("i18n");
+        chooseCompletion("i18n");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.i18n
-                    ${i18n()}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.i18n
+                ${i18n()}
+                """);
     }
 
     public void testNativeCompletionReplaysImportedKotlinPropertyFromSourceExpression() {
         addProfileClassWithKotlinProperties();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${profile.dis<caret>}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile.dis<caret>}
+                """);
 
-            chooseCompletion("displayName");
+        chooseCompletion("displayName");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${profile.displayName}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile.displayName}
+                """);
     }
 
     public void testNativeCompletionReplaysTemplateParamFromSourceExpression() {
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @param profile: String
-                    @param project: String
-                    ${prof<caret>}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @param profile: String
+                @param project: String
+                ${prof<caret>}
+                """);
 
-            chooseCompletion("profile");
+        chooseCompletion("profile");
 
-            assertTopLevelFileEquals("""
-                    @param profile: String
-                    @param project: String
-                    ${profile}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @param profile: String
+                @param project: String
+                ${profile}
+                """);
     }
 
     public void testNativeCompletionReplaysStatementLocalAfterDeclaration() {
         addCareOfferingFixture();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("facility.kte", """
-                    @import com.example.Page
-                    @param page: Page
-                    !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
-                    ${care<caret>}
-                    """);
+        myFixture.configureByText("facility.kte", """
+                @import com.example.Page
+                @param page: Page
+                !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
+                ${care<caret>}
+                """);
 
-            chooseCompletion("careOfferingForm");
+        chooseCompletion("careOfferingForm");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Page
-                    @param page: Page
-                    !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
-                    ${careOfferingForm}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Page
+                @param page: Page
+                !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
+                ${careOfferingForm}
+                """);
     }
 
     public void testNativeCompletionReplaysSafeCallMemberFromSourceExpression() {
         addProfileClassWithKotlinProperties();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @import com.example.Profile
-                    @param profile: Profile?
-                    ${profile?.dis<caret>}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile?
+                ${profile?.dis<caret>}
+                """);
 
-            chooseCompletion("displayName");
+        chooseCompletion("displayName");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    @param profile: Profile?
-                    ${profile?.displayName}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                @param profile: Profile?
+                ${profile?.displayName}
+                """);
     }
 
     public void testNativeCompletionReplaysImportedExtensionFunctionAfterReceiverDot() {
         addNestedObjectAndExtensionFixture();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("base.kte", """
-                    @import com.example.navigation.breadcrumb.Breadcrumb
-                    @import com.example.navigation.routing.RoutingUtils.isCurrentPage
-                    @param breadcrumbs: List<Breadcrumb>?
-                    @if(breadcrumbs.is<caret>)
-                        ${breadcrumbs}
-                    @endif
-                    """);
+        myFixture.configureByText("base.kte", """
+                @import com.example.navigation.breadcrumb.Breadcrumb
+                @import com.example.navigation.routing.RoutingUtils.isCurrentPage
+                @param breadcrumbs: List<Breadcrumb>?
+                @if(breadcrumbs.is<caret>)
+                    ${breadcrumbs}
+                @endif
+                """);
 
-            chooseCompletion("isCurrentPage");
+        chooseCompletion("isCurrentPage");
 
-            assertTopLevelFileContains("breadcrumbs.isCurrentPage");
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileContains("breadcrumbs.isCurrentPage");
     }
 
     public void testNativeCompletionReplaysImportedTypeInParamType() {
         addProfileClass();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @import com.example.Profile
-                    @param profile: Pro<caret>
-                    ${profile}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Pro<caret>
+                ${profile}
+                """);
 
-            chooseCompletion("Profile");
+        chooseCompletion("Profile");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${profile}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile}
+                """);
     }
 
     public void testNativeCompletionReplaysEnumEntryInTemplateArgument() {
         addSupportHelpers();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("form.kte", """
-                    @import com.example.HiddenHttpMethod
-                    @template.form.hidden_http_method(method = HiddenHttpMethod.P<caret>)
-                    """);
+        myFixture.configureByText("form.kte", """
+                @import com.example.HiddenHttpMethod
+                @template.form.hidden_http_method(method = HiddenHttpMethod.P<caret>)
+                """);
 
-            chooseCompletion("PUT");
+        chooseCompletion("PUT");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.HiddenHttpMethod
-                    @template.form.hidden_http_method(method = HiddenHttpMethod.PUT)
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.HiddenHttpMethod
+                @template.form.hidden_http_method(method = HiddenHttpMethod.PUT)
+                """);
     }
 
     public void testNativeCompletionReplaysStarImportedTopLevelFunctionCall() {
         addNoArgTopLevelCompletionFunctions();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("helpers.kte", """
-                    @import com.example.*
-                    ${i18<caret>}
-                    """);
+        myFixture.configureByText("helpers.kte", """
+                @import com.example.*
+                ${i18<caret>}
+                """);
 
-            chooseCompletion("i18n");
+        chooseCompletion("i18n");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.*
-                    ${i18n()}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.*
+                ${i18n()}
+                """);
     }
 
     public void testNativeCompletionReplaysCompanionMember() {
@@ -254,117 +194,87 @@ public class KteNativeKotlinCompletionInsertionTest extends KteK2FixtureSupport 
                 """);
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @import com.example.Profile
-                    ${Profile.DEF<caret>}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                ${Profile.DEF<caret>}
+                """);
 
-            chooseCompletion("DEFAULT");
+        chooseCompletion("DEFAULT");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    ${Profile.DEFAULT}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                ${Profile.DEFAULT}
+                """);
     }
 
     public void testNativeCompletionReplaysNestedObjectMember() {
         addNestedObjectAndExtensionFixture();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("base.kte", """
-                    @import com.example.navigation.config.PathConfig
-                    ${PathConfig.Front<caret>}
-                    """);
+        myFixture.configureByText("base.kte", """
+                @import com.example.navigation.config.PathConfig
+                ${PathConfig.Front<caret>}
+                """);
 
-            chooseCompletion("FrontOffice");
+        chooseCompletion("FrontOffice");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.navigation.config.PathConfig
-                    ${PathConfig.FrontOffice}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.navigation.config.PathConfig
+                ${PathConfig.FrontOffice}
+                """);
     }
 
     public void testNativeCompletionReplaysCallReceiverMember() {
         addProfileClassWithKotlinProperties();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${requireNotNull(profile.manager).dis<caret>}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile
+                ${requireNotNull(profile.manager).dis<caret>}
+                """);
 
-            chooseCompletion("displayName");
+        chooseCompletion("displayName");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${requireNotNull(profile.manager).displayName}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                @param profile: Profile
+                ${requireNotNull(profile.manager).displayName}
+                """);
     }
 
     public void testNativeCompletionReplaysBuiltinTypeInParamType() {
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @param title: Str<caret>
-                    ${title}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @param title: Str<caret>
+                ${title}
+                """);
 
-            chooseCompletion("String");
+        chooseCompletion("String");
 
-            assertTopLevelFileEquals("""
-                    @param title: String
-                    ${title}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @param title: String
+                ${title}
+                """);
     }
 
     public void testNativeCompletionReplaysAutoImportForParamType() {
         addProfileClass();
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("profile.kte", """
-                    @param profile: Pro<caret>
-                    ${profile}
-                    """);
+        myFixture.configureByText("profile.kte", """
+                @param profile: Pro<caret>
+                ${profile}
+                """);
 
-            chooseCompletion("Profile");
+        chooseCompletion("Profile");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Profile
-                    @param profile: Profile
-                    ${profile}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile}
+                """);
     }
 
     public void testNativeCompletionReplaysClassLookupInExpression() {
@@ -375,23 +285,17 @@ public class KteNativeKotlinCompletionInsertionTest extends KteK2FixtureSupport 
                 """);
         addJteRuntimeStubs();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("widget.kte", """
-                    @import com.example.Widget
-                    ${Wid<caret>}
-                    """);
+        myFixture.configureByText("widget.kte", """
+                @import com.example.Widget
+                ${Wid<caret>}
+                """);
 
-            chooseCompletion("Widget");
+        chooseCompletion("Widget");
 
-            assertTopLevelFileEquals("""
-                    @import com.example.Widget
-                    ${Widget}
-                    """);
-            assertNativeCompletionWasUsed();
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
-        }
+        assertTopLevelFileEquals("""
+                @import com.example.Widget
+                ${Widget}
+                """);
     }
 
     private void addNoArgTopLevelCompletionFunctions() {
@@ -414,18 +318,8 @@ public class KteNativeKotlinCompletionInsertionTest extends KteK2FixtureSupport 
     private void assertTopLevelFileContains(String expected) {
         String text = topLevelFileText();
         assertTrue(
-                "Expected top-level file to contain '" + expected + "':\n" + text +
-                        "\n\nDebug events:\n" + String.join("\n", KteNativeKotlinSourceCompletionBridge.debugEvents()),
+                "Expected top-level file to contain '" + expected + "':\n" + text,
                 text.contains(expected)
-        );
-    }
-
-    private void assertNativeCompletionWasUsed() {
-        assertTrue(
-                "Expected native K2 completion bridge to run.\n\nDebug events:\n" +
-                        String.join("\n", KteNativeKotlinSourceCompletionBridge.debugEvents()),
-                KteNativeKotlinSourceCompletionBridge.debugEvents().stream()
-                        .anyMatch(event -> event.startsWith("directK2 "))
         );
     }
 }

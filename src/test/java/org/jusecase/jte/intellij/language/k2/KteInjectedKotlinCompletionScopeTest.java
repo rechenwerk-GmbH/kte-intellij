@@ -6,8 +6,8 @@ import com.intellij.psi.PsiFile;
 
 import java.util.List;
 
-public class KteNoKotlinInjectionTest extends KteK2FixtureSupport {
-    public void testKteExpressionDoesNotCreateInjectedKotlinFile() {
+public class KteInjectedKotlinCompletionScopeTest extends KteK2FixtureSupport {
+    public void testKteExpressionDoesNotCreateInjectedKotlinFileOutsideCompletion() {
         addProfileClassWithKotlinProperties();
 
         PsiFile configuredFile = myFixture.configureByText("profile.kte", """
@@ -20,7 +20,7 @@ public class KteNoKotlinInjectionTest extends KteK2FixtureSupport {
         assertDoesNotContainImportDirectiveCodeFragmentError();
     }
 
-    public void testKteImportDoesNotCreateInjectedKotlinFile() {
+    public void testKteImportDoesNotCreateInjectedKotlinFileOutsideCompletion() {
         PsiFile configuredFile = myFixture.configureByText("imports.kte", """
                 @import com.example.Profile<caret>
                 """);
@@ -29,7 +29,7 @@ public class KteNoKotlinInjectionTest extends KteK2FixtureSupport {
         assertDoesNotContainImportDirectiveCodeFragmentError();
     }
 
-    public void testKteParamDoesNotCreateInjectedKotlinFile() {
+    public void testKteParamDoesNotCreateInjectedKotlinFileOutsideCompletion() {
         PsiFile configuredFile = myFixture.configureByText("params.kte", """
                 @import com.example.Profile
                 @param profile: Profile<caret>

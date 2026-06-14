@@ -66,14 +66,20 @@ final class KteKotlinImportResolver {
     List<ImportCandidate> importCandidates(@NotNull String visibleName, boolean includeCallables) {
         String candidateName = KteKotlinTypeText.shortName(visibleName);
         Map<String, ImportCandidate> result = new LinkedHashMap<>();
-        for (PsiClass psiClass : PsiShortNamesCache.getInstance(project).getClassesByName(candidateName, scope)) {
-            String qualifiedName = psiClass.getQualifiedName();
-            if (qualifiedName != null) {
-                result.putIfAbsent(qualifiedName, new ImportCandidate(qualifiedName, navigationElement(psiClass)));
-            }
-        }
+        addJavaClassImportCandidates(result, candidateName);
 
         addKotlinTopLevelImportCandidates(result, candidateName, includeCallables);
+        return result.values()
+                .stream()
+                .sorted(Comparator.comparing(ImportCandidate::qualifiedName))
+                .toList();
+    }
+
+    @NotNull
+    List<ImportCandidate> importCandidatesByPrefix(@NotNull String visibleNamePrefix, boolean includeCallables) {
+        String candidatePrefix = KteKotlinTypeText.shortName(visibleNamePrefix);
+        Map<String, ImportCandidate> result = new LinkedHashMap<>();
+        addKotlinTopLevelImportCandidates(result, declarationName -> declarationName.startsWith(candidatePrefix), includeCallables);
         return result.values()
                 .stream()
                 .sorted(Comparator.comparing(ImportCandidate::qualifiedName))
@@ -133,8 +139,23 @@ final class KteKotlinImportResolver {
         return result;
     }
 
+    private void addJavaClassImportCandidates(@NotNull Map<String, ImportCandidate> result, @NotNull String candidateName) {
+        for (PsiClass psiClass : PsiShortNamesCache.getInstance(project).getClassesByName(candidateName, scope)) {
+            String qualifiedName = psiClass.getQualifiedName();
+            if (qualifiedName != null) {
+                result.putIfAbsent(qualifiedName, new ImportCandidate(qualifiedName, navigationElement(psiClass)));
+            }
+        }
+    }
+
     private void addKotlinTopLevelImportCandidates(@NotNull Map<String, ImportCandidate> result,
                                                    @NotNull String name,
+                                                   boolean includeCallables) {
+        addKotlinTopLevelImportCandidates(result, declarationName -> declarationName.equals(name), includeCallables);
+    }
+
+    private void addKotlinTopLevelImportCandidates(@NotNull Map<String, ImportCandidate> result,
+                                                   @NotNull java.util.function.Predicate<String> nameFilter,
                                                    boolean includeCallables) {
         PsiManager psiManager = PsiManager.getInstance(project);
         for (VirtualFile virtualFile : FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)) {
@@ -145,7 +166,8 @@ final class KteKotlinImportResolver {
 
             for (KtDeclaration declaration : ktFile.getDeclarations()) {
                 if (!(declaration instanceof KtNamedDeclaration namedDeclaration) ||
-                        !name.equals(namedDeclaration.getName())) {
+                        namedDeclaration.getName() == null ||
+                        !nameFilter.test(namedDeclaration.getName())) {
                     continue;
                 }
 

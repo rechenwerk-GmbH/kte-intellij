@@ -1,7 +1,9 @@
 package org.jusecase.jte.intellij.language.k2;
 
 import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.codeInsight.lookup.LookupElementPresentation;
 
+import java.util.Arrays;
 import java.util.Set;
 
 public class KteNativeKotlinCompletionLookupTest extends KteK2FixtureSupport {
@@ -30,6 +32,60 @@ public class KteNativeKotlinCompletionLookupTest extends KteK2FixtureSupport {
 
         assertTrue(lookupStrings.contains("displayName"));
         assertTrue(lookupStrings.contains("email"));
+    }
+
+    public void testHidesGeneratedDataClassComponentFunctionsAfterReceiverDot() {
+        addProfileClassWithKotlinProperties();
+
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile.<caret>}
+                """);
+
+        Set<String> lookupStrings = completeBasicLookupStrings();
+
+        assertContainsLookup(lookupStrings, "displayName");
+        assertContainsLookup(lookupStrings, "copy");
+        assertDoesNotContainLookup(lookupStrings, "component1");
+        assertDoesNotContainLookup(lookupStrings, "component2");
+    }
+
+    public void testHidesJavaGetterWhenSyntheticPropertyExistsAfterReceiverDot() {
+        addProfileJavaClass();
+
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile.<caret>}
+                """);
+
+        Set<String> lookupStrings = completeBasicLookupStrings();
+
+        assertContainsLookup(lookupStrings, "displayName");
+        assertContainsLookup(lookupStrings, "isActive");
+        assertDoesNotContainLookup(lookupStrings, "getDisplayName");
+        assertDoesNotContainLookup(lookupStrings, "getEmail");
+    }
+
+    public void testRendersKotlinPropertyCompletionPresentationMetadata() {
+        addProfileClassWithKotlinProperties();
+
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile
+                @param profile: Profile
+                ${profile.<caret>}
+                """);
+
+        LookupElement[] elements = myFixture.completeBasic();
+        assertNotNull(elements);
+
+        LookupElement displayName = lookupElement(elements, "displayName");
+        LookupElementPresentation presentation = new LookupElementPresentation();
+        displayName.renderElement(presentation);
+
+        assertEquals("String", presentation.getTypeText());
+        assertNotNull(presentation.getIcon());
     }
 
     public void testFiltersByTypedPropertyPrefix() {
@@ -365,34 +421,24 @@ public class KteNativeKotlinCompletionLookupTest extends KteK2FixtureSupport {
     public void testDoesNotCompleteLocalStatementVariableBeforeDeclaration() {
         addCareOfferingFixture();
 
-        KteNativeKotlinSourceCompletionBridge.enableDebug();
-        try {
-            myFixture.configureByText("facility.kte", """
-                    @import com.example.Page
-                    @param page: Page
-                    ${care<caret>}
-                    !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
-                    """);
+        myFixture.configureByText("facility.kte", """
+                @import com.example.Page
+                @param page: Page
+                ${care<caret>}
+                !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
+                """);
 
-            LookupElement[] elements = myFixture.completeBasic();
-            if (elements == null) {
-                assertFalse(
-                        "Completion inserted future local:\n" + topLevelFileText() +
-                                "\n\nDebug events:\n" + String.join("\n", KteNativeKotlinSourceCompletionBridge.debugEvents()),
-                        topLevelFileText().contains("${careOfferingForm}")
-                );
-                return;
-            }
-            Set<String> lookupStrings = lookupStrings(elements);
-
+        LookupElement[] elements = myFixture.completeBasic();
+        if (elements == null) {
             assertFalse(
-                    "Did not expect future local in " + lookupStrings +
-                            "\n\nDebug events:\n" + String.join("\n", KteNativeKotlinSourceCompletionBridge.debugEvents()),
-                    lookupStrings.contains("careOfferingForm")
+                    "Completion inserted future local:\n" + topLevelFileText(),
+                    topLevelFileText().contains("${careOfferingForm}")
             );
-        } finally {
-            KteNativeKotlinSourceCompletionBridge.disableDebug();
+            return;
         }
+        Set<String> lookupStrings = lookupStrings(elements);
+
+        assertFalse("Did not expect future local in " + lookupStrings, lookupStrings.contains("careOfferingForm"));
     }
 
     public void testCompletesPropertiesForLocalStatementVariable() {
@@ -422,5 +468,12 @@ public class KteNativeKotlinCompletionLookupTest extends KteK2FixtureSupport {
         }
 
         assertContainsLookup(lookupStrings(elements), "true");
+    }
+
+    private LookupElement lookupElement(LookupElement[] elements, String lookupString) {
+        return Arrays.stream(elements)
+                .filter(candidate -> lookupString.equals(candidate.getLookupString()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected lookup '" + lookupString + "' in " + Arrays.toString(elements)));
     }
 }
