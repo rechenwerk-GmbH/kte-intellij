@@ -92,7 +92,6 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
 
         <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinAnalysisContextService"/>
         <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinModelService"/>
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinSemanticService"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

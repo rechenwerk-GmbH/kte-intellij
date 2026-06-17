@@ -2,11 +2,20 @@ package org.jusecase.jte.intellij.language.k2;
 
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.analysis.api.AnalyzeKt;
+import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter;
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticKt;
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticWithPsi;
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity;
 import org.jusecase.jte.intellij.language.KteLanguage;
 import org.jusecase.jte.intellij.language.psi.JtePsiImport;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
@@ -37,9 +46,7 @@ public final class KteSyntheticKotlinDiagnosticCollector {
         KteSyntheticKotlinModel model = KteSyntheticKotlinModelService.getInstance(templateFile.getProject()).getModel(templateFile);
         KteKotlinImportResolver importResolver = new KteKotlinImportResolver(templateFile);
 
-        KteSyntheticKotlinSemanticService semanticService =
-                KteSyntheticKotlinSemanticService.getInstance(templateFile.getProject());
-        for (Diagnostic diagnostic : semanticService.collectKotlinDiagnostics(templateFile, model)) {
+        for (Diagnostic diagnostic : collectKotlinDiagnostics(model)) {
             sink.add(withNativeImportFixes(templateFile, importResolver, diagnostic));
         }
 
@@ -48,6 +55,126 @@ public final class KteSyntheticKotlinDiagnosticCollector {
         }
 
         return sink.diagnostics();
+    }
+
+    @NotNull
+    private List<Diagnostic> collectKotlinDiagnostics(@NotNull KteSyntheticKotlinModel model) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
+        collectMappedSyntaxErrors(model, diagnostics);
+        diagnostics.addAll(collectAnalysisApiDiagnostics(model));
+        return diagnostics;
+    }
+
+    @Nullable
+    private TextRange mapKotlinErrorRangeToTemplate(@NotNull KteSyntheticKotlinModel model,
+                                                    @NotNull TextRange kotlinRange) {
+        return model.getSyntheticFile().mapKotlinErrorRangeToTemplate(kotlinRange);
+    }
+
+    private void collectMappedSyntaxErrors(
+            @NotNull KteSyntheticKotlinModel model,
+            @NotNull List<Diagnostic> diagnostics) {
+        for (PsiErrorElement errorElement : PsiTreeUtil.findChildrenOfType(model.getKtFile(), PsiErrorElement.class)) {
+            TextRange templateRange = mapKotlinErrorRangeToTemplate(model, errorElement.getTextRange());
+            if (templateRange != null && !templateRange.isEmpty()) {
+                diagnostics.add(new Diagnostic(
+                        HighlightSeverity.ERROR,
+                        "Kotlin syntax error: " + errorElement.getErrorDescription(),
+                        templateRange
+                ));
+            }
+        }
+    }
+
+    @NotNull
+    private List<Diagnostic> collectAnalysisApiDiagnostics(@NotNull KteSyntheticKotlinModel model) {
+        try {
+            return AnalyzeKt.analyze(model.getKtFile(), session -> {
+                List<Diagnostic> diagnostics = new ArrayList<>();
+                for (KaDiagnosticWithPsi<?> kotlinDiagnostic :
+                        session.collectDiagnostics(
+                                model.getKtFile(),
+                                KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS
+                        )) {
+                    collectDiagnostic(model, kotlinDiagnostic, diagnostics);
+                }
+
+                return diagnostics;
+            });
+        } catch (ProcessCanceledException exception) {
+            throw exception;
+        } catch (RuntimeException | LinkageError exception) {
+            if (ApplicationManager.getApplication().isUnitTestMode()) {
+                throw exception;
+            }
+            return List.of();
+        }
+    }
+
+    private void collectDiagnostic(
+            @NotNull KteSyntheticKotlinModel model,
+            @NotNull KaDiagnosticWithPsi<?> kotlinDiagnostic,
+            @NotNull List<Diagnostic> diagnostics) {
+        HighlightSeverity severity = severity(kotlinDiagnostic.getSeverity());
+        String message = KaDiagnosticKt.getDefaultMessageWithFactoryName(kotlinDiagnostic);
+        for (TextRange kotlinRange : kotlinRanges(kotlinDiagnostic, model.getKtFile().getTextLength())) {
+            TextRange templateRange = mapKotlinErrorRangeToTemplate(model, kotlinRange);
+            if (templateRange == null || templateRange.isEmpty()) {
+                continue;
+            }
+
+            diagnostics.add(new Diagnostic(
+                    severity,
+                    message,
+                    templateRange,
+                    Origin.SYNTHETIC_KOTLIN
+            ));
+        }
+    }
+
+    @NotNull
+    private List<TextRange> kotlinRanges(@NotNull KaDiagnosticWithPsi<?> diagnostic, int fileLength) {
+        List<TextRange> ranges = new ArrayList<>();
+        PsiElement psi = diagnostic.getPsi();
+        TextRange psiRange = psi.getTextRange();
+        for (TextRange range : diagnostic.getTextRanges()) {
+            TextRange fileRange = toFileRange(range, psiRange, fileLength);
+            if (fileRange != null && !fileRange.isEmpty()) {
+                ranges.add(fileRange);
+            }
+        }
+
+        if (ranges.isEmpty() && psiRange != null && !psiRange.isEmpty()) {
+            ranges.add(psiRange);
+        }
+
+        return ranges;
+    }
+
+    @Nullable
+    private TextRange toFileRange(@NotNull TextRange range, @Nullable TextRange psiRange, int fileLength) {
+        if (range.getStartOffset() >= 0 &&
+                range.getEndOffset() <= fileLength &&
+                (psiRange == null || range.intersects(psiRange) || psiRange.contains(range))) {
+            return range;
+        }
+
+        if (psiRange != null &&
+                range.getStartOffset() >= 0 &&
+                range.getEndOffset() <= psiRange.getLength()) {
+            return range.shiftRight(psiRange.getStartOffset());
+        }
+
+        return null;
+    }
+
+    @NotNull
+    private HighlightSeverity severity(@NotNull KaSeverity severity) {
+        return switch (severity) {
+            case ERROR -> HighlightSeverity.ERROR;
+            case WARNING -> HighlightSeverity.WARNING;
+            case INFO -> HighlightSeverity.INFORMATION;
+        };
     }
 
     @NotNull
