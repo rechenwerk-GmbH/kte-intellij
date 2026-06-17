@@ -9,7 +9,7 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
 public class KteCompletionContributor extends CompletionContributor {
     public KteCompletionContributor() {
         extend(null, psiElement(KteTokenTypes.TEMPLATE_NAME), new KteTemplateCompletionProvider());
-        extend(null, psiElement(), new KteSyntheticOutputCompletionProvider());
+        extend(null, psiElement(), new KteParameterKotlinCompletionProvider());
         extend(null, psiElement(), new KteTemplateParamCompletionProvider());
     }
 }
