@@ -9,7 +9,7 @@ import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.KteLanguage;
-import org.jusecase.jte.intellij.language.k2.KteKotlinCompletionSupplement;
+import org.jusecase.jte.intellij.language.completion.KteKotlinCompletionSupplement;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;

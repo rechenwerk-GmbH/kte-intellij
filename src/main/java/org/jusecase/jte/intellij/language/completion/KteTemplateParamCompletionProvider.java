@@ -11,7 +11,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
-import org.jusecase.jte.intellij.language.k2.KteTemplateSignatureService;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 import org.jusecase.jte.intellij.language.psi.*;
 import org.jusecase.jte.intellij.language.template.KteTemplateCallArguments;
 

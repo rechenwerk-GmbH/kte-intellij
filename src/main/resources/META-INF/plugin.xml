@@ -43,18 +43,18 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
 
         <lang.elementManipulator forClass="org.jusecase.jte.intellij.language.psi.KtePsiJavaContent"
                                  implementationClass="org.jusecase.jte.intellij.language.KteKotlinContentManipulator"/>
-        <multiHostInjector implementation="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinFragmentInjector"/>
+        <multiHostInjector implementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinFragmentInjector"/>
 
         <lang.findUsagesProvider language="KotlinTemplateEngine"
                                  implementationClass="org.jusecase.jte.intellij.language.refactoring.KteFindUsagesProvider"/>
         <lang.documentationProvider language="KotlinTemplateEngine"
-                                    implementationClass="org.jusecase.jte.intellij.language.k2.KteKotlinDocumentationProvider"/>
+                                    implementationClass="org.jusecase.jte.intellij.language.KteKotlinDocumentationProvider"/>
         <completion.contributor language="KotlinTemplateEngine"
                                 implementationClass="org.jusecase.jte.intellij.language.completion.KteCompletionContributor"/>
         <completion.contributor language="kotlin"
                                 id="KteInjectedKotlinCompletionContributor"
                                 order="first, before KotlinCompletionContributor"
-                                implementationClass="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinCompletionContributor"/>
+                                implementationClass="org.jusecase.jte.intellij.language.completion.KteInjectedKotlinCompletionContributor"/>
 
         <defaultLiveTemplates file="liveTemplates/kte.xml"/>
         <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.KteLiveTemplateContext" contextId="kte"/>
@@ -67,7 +67,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
 
         <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteStructuralAnnotator"/>
         <annotator language="KotlinTemplateEngine"
-                   implementationClass="org.jusecase.jte.intellij.language.k2.KteTemplateDiagnosticAnnotator"/>
+                   implementationClass="org.jusecase.jte.intellij.language.KteTemplateDiagnosticAnnotator"/>
         <intentionAction>
             <className>org.jusecase.jte.intellij.language.refactoring.KteOptimizeImportsIntention</className>
             <category>KTE</category>
@@ -82,7 +82,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
         <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.KteMoveFileHandler" id="KotlinTemplateEngine"/>
 
         <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteFileReferenceContributor"/>
-        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.k2.KteKotlinReferenceContributor"
+        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteKotlinReferenceContributor"
                                   language="KotlinTemplateEngine"/>
         <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.KteTemplateParamReferencesSearcher"/>
 
@@ -90,7 +90,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
         <codeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteCodeStyleSettingsProvider"/>
         <langCodeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteLanguageCodeStyleSettingsProvider"/>
 
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteKotlinAnalysisContextService"/>
+        <projectService serviceImplementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinAnalysisContextService"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
