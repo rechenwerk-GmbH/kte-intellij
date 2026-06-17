@@ -19,7 +19,7 @@ public final class KteInjectedKotlinCompletionContributor extends CompletionCont
     }
 
     private static final class KteInjectedKotlinCompletionProvider extends CompletionProvider<CompletionParameters> {
-        private final KtePublicKotlinCompletionBridge publicBridge = new KtePublicKotlinCompletionBridge();
+        private final KteKotlinCompletionSupplement completionSupplement = new KteKotlinCompletionSupplement();
 
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters,
@@ -47,7 +47,7 @@ public final class KteInjectedKotlinCompletionContributor extends CompletionCont
                 }
             });
 
-            publicBridge.complete(result, hostContext.kteFile(), hostContext.hostOffset());
+            completionSupplement.addExpressionCompletions(result, hostContext.kteFile(), hostContext.hostOffset());
             result.stopHere();
         }
     }

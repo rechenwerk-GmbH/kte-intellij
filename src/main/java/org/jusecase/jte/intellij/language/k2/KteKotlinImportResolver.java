@@ -79,6 +79,7 @@ final class KteKotlinImportResolver {
     List<ImportCandidate> importCandidatesByPrefix(@NotNull String visibleNamePrefix, boolean includeCallables) {
         String candidatePrefix = KteKotlinTypeText.shortName(visibleNamePrefix);
         Map<String, ImportCandidate> result = new LinkedHashMap<>();
+        addJavaClassImportCandidatesByPrefix(result, candidatePrefix);
         addKotlinTopLevelImportCandidates(result, declarationName -> declarationName.startsWith(candidatePrefix), includeCallables);
         return result.values()
                 .stream()
@@ -144,6 +145,15 @@ final class KteKotlinImportResolver {
             String qualifiedName = psiClass.getQualifiedName();
             if (qualifiedName != null) {
                 result.putIfAbsent(qualifiedName, new ImportCandidate(qualifiedName, navigationElement(psiClass)));
+            }
+        }
+    }
+
+    private void addJavaClassImportCandidatesByPrefix(@NotNull Map<String, ImportCandidate> result,
+                                                      @NotNull String candidatePrefix) {
+        for (String className : PsiShortNamesCache.getInstance(project).getAllClassNames()) {
+            if (className.startsWith(candidatePrefix)) {
+                addJavaClassImportCandidates(result, className);
             }
         }
     }

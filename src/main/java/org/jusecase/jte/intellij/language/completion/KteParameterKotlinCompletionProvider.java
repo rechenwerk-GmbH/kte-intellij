@@ -9,13 +9,13 @@ import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.KteLanguage;
-import org.jusecase.jte.intellij.language.k2.KtePublicKotlinCompletionBridge;
+import org.jusecase.jte.intellij.language.k2.KteKotlinCompletionSupplement;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;
 
 public class KteParameterKotlinCompletionProvider extends CompletionProvider<CompletionParameters> {
-    private final KtePublicKotlinCompletionBridge kotlinCompletionBridge = new KtePublicKotlinCompletionBridge();
+    private final KteKotlinCompletionSupplement completionSupplement = new KteKotlinCompletionSupplement();
 
     @Override
     protected void addCompletions(@NotNull CompletionParameters parameters,
@@ -26,7 +26,7 @@ public class KteParameterKotlinCompletionProvider extends CompletionProvider<Com
             return;
         }
 
-        kotlinCompletionBridge.complete(result, completionInjection.getContainingFile(), parameters.getOffset());
+        completionSupplement.addParameterTypeCompletions(result, completionInjection.getContainingFile(), parameters.getOffset());
     }
 
     @Nullable

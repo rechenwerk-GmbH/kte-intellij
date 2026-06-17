@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.KteLanguage;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
+import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;
 
 record KteCompletionHostContext(@NotNull PsiFile kteFile, int hostOffset, @NotNull PsiElement hostElement) {
@@ -71,6 +72,28 @@ record KteCompletionHostContext(@NotNull PsiFile kteFile, int hostOffset, @NotNu
         if (element == null && offset > 0) {
             element = kteFile.findElementAt(offset - 1);
         }
+        if (element != null && !isInsideKotlinInjection(element)) {
+            element = containingInjection(element, hostOffset);
+        }
         return element;
+    }
+
+    @Nullable
+    private static JtePsiJavaInjection containingInjection(@NotNull PsiElement element, int hostOffset) {
+        KtePsiJavaContent host = PsiTreeUtil.getParentOfType(element, KtePsiJavaContent.class, false);
+        if (host == null && element instanceof KtePsiJavaContent javaContent) {
+            host = javaContent;
+        }
+        if (host == null) {
+            return null;
+        }
+
+        for (JtePsiJavaInjection injection : PsiTreeUtil.findChildrenOfType(host, JtePsiJavaInjection.class)) {
+            if (injection.getTextRange().containsOffset(hostOffset) ||
+                    injection.getTextRange().getEndOffset() == hostOffset) {
+                return injection;
+            }
+        }
+        return null;
     }
 }

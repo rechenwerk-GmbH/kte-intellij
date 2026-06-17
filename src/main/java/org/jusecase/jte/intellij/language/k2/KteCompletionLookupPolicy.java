@@ -5,9 +5,6 @@ import com.intellij.codeInsight.completion.CompletionResult;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolOrigin;
-import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiStatement;
 import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
@@ -27,25 +24,28 @@ final class KteCompletionLookupPolicy {
 
     static boolean isHiddenNativeResult(@NotNull CompletionResult completionResult,
                                         @NotNull Set<String> hiddenLookupStrings) {
+        if (isHiddenLookupString(completionResult.getLookupElement().getLookupString(), hiddenLookupStrings)) {
+            return true;
+        }
+
         for (String lookupString : completionResult.getLookupElement().getAllLookupStrings()) {
-            if (isGeneratedComponentFunction(lookupString) ||
-                    hiddenLookupStrings.contains(lookupString) ||
-                    "INSTANCE".equals(lookupString)) {
+            if (isHiddenLookupString(lookupString, hiddenLookupStrings)) {
                 return true;
             }
         }
         return false;
     }
 
-    static boolean isGeneratedComponentFunction(@NotNull String lookupString) {
-        return GENERATED_COMPONENT_FUNCTION.matcher(lookupString).matches();
+    private static boolean isHiddenLookupString(@NotNull String lookupString,
+                                                @NotNull Set<String> hiddenLookupStrings) {
+        return isGeneratedComponentFunction(lookupString) ||
+                KteSyntheticKotlinGeneratedNames.isGeneratedLookup(lookupString) ||
+                hiddenLookupStrings.contains(lookupString) ||
+                "INSTANCE".equals(lookupString);
     }
 
-    static boolean isGeneratedSourceMemberComponentFunction(@NotNull String lookupString,
-                                                            @NotNull KaCallableSymbol symbol) {
-        return symbol instanceof KaNamedFunctionSymbol &&
-                symbol.getOrigin() == KaSymbolOrigin.SOURCE_MEMBER_GENERATED &&
-                isGeneratedComponentFunction(lookupString);
+    static boolean isGeneratedComponentFunction(@NotNull String lookupString) {
+        return GENERATED_COMPONENT_FUNCTION.matcher(lookupString).matches();
     }
 
     @NotNull
