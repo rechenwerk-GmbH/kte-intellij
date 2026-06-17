@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
-public class JteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProvider implements ConfigurableTemplateLanguageFileViewProvider {
+public class KteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProvider implements ConfigurableTemplateLanguageFileViewProvider {
 
     private static final ConcurrentMap<String, TemplateDataElementType> TEMPLATE_DATA_TO_LANG = new ConcurrentHashMap<>();
 
@@ -52,11 +52,11 @@ public class JteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProv
     private final Language myTemplateLanguage;
     private final TokenTypes myTokenTypes;
 
-    public JteFileViewProvider(@NotNull PsiManager manager, @NotNull VirtualFile virtualFile, boolean eventSystemEnabled, Language language, TokenTypes tokenTypes) {
+    public KteFileViewProvider(@NotNull PsiManager manager, @NotNull VirtualFile virtualFile, boolean eventSystemEnabled, Language language, TokenTypes tokenTypes) {
         this(manager, virtualFile, eventSystemEnabled, language, getTemplateDataLanguage(manager, virtualFile), tokenTypes);
     }
 
-    private JteFileViewProvider(@NotNull PsiManager manager, @NotNull VirtualFile virtualFile, boolean eventSystemEnabled, Language myBaseLanguage, Language myTemplateLanguage, TokenTypes tokenTypes) {
+    private KteFileViewProvider(@NotNull PsiManager manager, @NotNull VirtualFile virtualFile, boolean eventSystemEnabled, Language myBaseLanguage, Language myTemplateLanguage, TokenTypes tokenTypes) {
         super(manager, virtualFile, eventSystemEnabled);
 
         this.myBaseLanguage = myBaseLanguage;
@@ -85,7 +85,7 @@ public class JteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProv
     @NotNull
     @Override
     protected MultiplePsiFilesPerDocumentFileViewProvider cloneInner(@NotNull VirtualFile fileCopy) {
-        return new JteFileViewProvider(getManager(), fileCopy, false, myBaseLanguage, myTemplateLanguage, myTokenTypes);
+        return new KteFileViewProvider(getManager(), fileCopy, false, myBaseLanguage, myTemplateLanguage, myTokenTypes);
     }
 
     @Nullable
@@ -113,7 +113,7 @@ public class JteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewProv
     @Override
     public IElementType getContentElementType(@NotNull Language language) {
         if (language.is(getTemplateDataLanguage())) {
-            return getTemplateDataElementType(language, s -> new JteTemplateDataElementType(language, myTokenTypes));
+            return getTemplateDataElementType(language, s -> new KteTemplateDataElementType(language, myTokenTypes));
         }
         return null;
     }

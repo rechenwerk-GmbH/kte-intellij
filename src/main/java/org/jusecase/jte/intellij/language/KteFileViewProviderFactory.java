@@ -12,6 +12,6 @@ public class KteFileViewProviderFactory implements FileViewProviderFactory {
     @NotNull
     @Override
     public FileViewProvider createFileViewProvider(@NotNull VirtualFile file, Language language, @NotNull PsiManager manager, boolean eventSystemEnabled) {
-        return new JteFileViewProvider(manager, file, eventSystemEnabled, KteLanguage.INSTANCE, KteTokenTypes.INSTANCE);
+        return new KteFileViewProvider(manager, file, eventSystemEnabled, KteLanguage.INSTANCE, KteTokenTypes.INSTANCE);
     }
 }

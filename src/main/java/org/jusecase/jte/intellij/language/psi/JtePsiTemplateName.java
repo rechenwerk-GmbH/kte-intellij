@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class JtePsiTemplateName extends JtePsiElement implements PsiNamedElement {
 
-    public static final String JTE_ROOT = ".jteroot";
+    public static final String TEMPLATE_ROOT_MARKER = ".jteroot";
 
     private final String extension;
 
@@ -352,7 +352,7 @@ public class JtePsiTemplateName extends JtePsiElement implements PsiNamedElement
             return null;
         }
 
-        if (parent.findFile(JTE_ROOT) != null) {
+        if (parent.findFile(TEMPLATE_ROOT_MARKER) != null) {
             return parent;
         }
 

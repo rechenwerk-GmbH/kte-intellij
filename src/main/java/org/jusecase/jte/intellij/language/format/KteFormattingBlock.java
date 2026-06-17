@@ -14,10 +14,10 @@ import org.jusecase.jte.intellij.language.parsing.TokenTypes;
 
 import java.util.List;
 
-public class JteFormattingBlock extends TemplateLanguageBlock {
+public class KteFormattingBlock extends TemplateLanguageBlock {
     private final TokenTypes tokenTypes;
 
-    protected JteFormattingBlock(AbstractXmlTemplateFormattingModelBuilder builder, @NotNull ASTNode node, @Nullable Wrap wrap, @Nullable Alignment alignment, CodeStyleSettings settings, XmlFormattingPolicy xmlFormattingPolicy, @Nullable Indent indent, TokenTypes tokenTypes) {
+    protected KteFormattingBlock(AbstractXmlTemplateFormattingModelBuilder builder, @NotNull ASTNode node, @Nullable Wrap wrap, @Nullable Alignment alignment, CodeStyleSettings settings, XmlFormattingPolicy xmlFormattingPolicy, @Nullable Indent indent, TokenTypes tokenTypes) {
         super(builder, node, wrap, alignment, settings, xmlFormattingPolicy, indent);
         this.tokenTypes = tokenTypes;
     }

@@ -32,6 +32,6 @@ public abstract class FormattingModelBuilderBase extends AbstractXmlTemplateForm
 
     @Override
     protected Block createTemplateLanguageBlock(ASTNode node, CodeStyleSettings settings, XmlFormattingPolicy xmlFormattingPolicy, Indent indent, @Nullable Alignment alignment, @Nullable Wrap wrap) {
-        return new JteFormattingBlock(this, node, wrap, alignment, settings, xmlFormattingPolicy, indent, tokenTypes);
+        return new KteFormattingBlock(this, node, wrap, alignment, settings, xmlFormattingPolicy, indent, tokenTypes);
     }
 }

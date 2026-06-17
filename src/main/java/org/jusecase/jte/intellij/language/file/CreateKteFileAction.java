@@ -2,12 +2,12 @@ package org.jusecase.jte.intellij.language.file;
 
 import com.intellij.ide.actions.CreateFileAction;
 import org.jetbrains.annotations.Nullable;
-import org.jusecase.jte.intellij.language.JteIcons;
+import org.jusecase.jte.intellij.language.KteIcons;
 
 public class CreateKteFileAction extends CreateFileAction {
 
     public CreateKteFileAction() {
-        super(() -> "KTE Template", () -> "Create KTE Template", () -> JteIcons.ICON);
+        super(() -> "KTE Template", () -> "Create KTE Template", () -> KteIcons.ICON);
     }
 
     @Override

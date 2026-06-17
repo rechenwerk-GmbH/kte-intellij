@@ -28,7 +28,7 @@ public class KteStructuralAnnotator implements Annotator {
     private void doAnnotate(JtePsiTemplateName element, AnnotationHolder holder) {
         if (element.getReference() == null) {
             if (element.findRootDirectory() == null) {
-                addError(holder, "Please add a '" + JtePsiTemplateName.JTE_ROOT + "' file to the root source directory of your jte sources, so that IntelliJ knows how to reference templates.");
+                addError(holder, "Please add a '" + JtePsiTemplateName.TEMPLATE_ROOT_MARKER + "' file to the root source directory of your KTE template sources, so that IntelliJ knows how to reference templates.");
             } else {
                 if (element.isDirectory()) {
                     addError(holder, "Unresolved directory " + element.getName());

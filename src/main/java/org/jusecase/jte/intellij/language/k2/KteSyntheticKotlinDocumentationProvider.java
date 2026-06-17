@@ -196,7 +196,7 @@ public final class KteSyntheticKotlinDocumentationProvider extends AbstractDocum
     private PsiDirectory templateRoot(@Nullable PsiDirectory directory) {
         PsiDirectory current = directory;
         while (current != null) {
-            if (current.findFile(JtePsiTemplateName.JTE_ROOT) != null) {
+            if (current.findFile(JtePsiTemplateName.TEMPLATE_ROOT_MARKER) != null) {
                 return current;
             }
             current = current.getParent();

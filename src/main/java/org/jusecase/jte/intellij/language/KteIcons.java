@@ -4,6 +4,6 @@ import com.intellij.icons.AllIcons;
 
 import javax.swing.*;
 
-public class JteIcons {
+public class KteIcons {
     public static final Icon ICON = AllIcons.FileTypes.Html;
 }
