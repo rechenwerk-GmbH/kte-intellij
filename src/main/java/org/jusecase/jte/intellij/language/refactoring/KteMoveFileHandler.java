@@ -49,14 +49,15 @@ public class KteMoveFileHandler extends MoveFileHandler {
 
         Set<PsiReference> foundReferences = new HashSet<>();
 
-        for (PsiReference reference : ReferencesSearch.search(psiFile, GlobalSearchScope.projectScope(psiFile.getProject()), false)) {
+        ReferencesSearch.search(psiFile, GlobalSearchScope.projectScope(psiFile.getProject()), false).forEach(reference -> {
             if (foundReferences.contains(reference)) {
-                continue;
+                return true;
             }
             TextRange range = reference.getRangeInElement();
             result.add(new MoveRenameUsageInfo(reference.getElement(), reference, range.getStartOffset(), range.getEndOffset(), psiFile, false));
             foundReferences.add(reference);
-        }
+            return true;
+        });
 
         return result;
     }

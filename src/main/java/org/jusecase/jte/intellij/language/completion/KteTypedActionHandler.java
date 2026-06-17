@@ -33,7 +33,7 @@ public class KteTypedActionHandler extends TypedHandlerDelegate {
     }
 
     private void invokeAutoPopup(@NotNull Project project, @NotNull Editor editor, char charTyped) {
-        AutoPopupController.getInstance(project).autoPopupMemberLookup(editor, file -> {
+        AutoPopupController.getInstance(project).scheduleAutoPopup(editor, file -> {
             int offset = editor.getCaretModel().getOffset();
 
             PsiElement lastElement = file.findElementAt(offset - 1);

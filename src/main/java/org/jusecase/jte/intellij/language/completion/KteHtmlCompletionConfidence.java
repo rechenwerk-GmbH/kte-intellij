@@ -2,6 +2,7 @@ package org.jusecase.jte.intellij.language.completion;
 
 import com.intellij.codeInsight.completion.CompletionConfidence;
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -19,7 +20,7 @@ import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
 public class KteHtmlCompletionConfidence extends CompletionConfidence {
     @NotNull
     @Override
-    public ThreeState shouldSkipAutopopup(@NotNull PsiElement contextElement, @NotNull PsiFile psiFile, int offset) {
+    public ThreeState shouldSkipAutopopup(@NotNull Editor editor, @NotNull PsiElement contextElement, @NotNull PsiFile psiFile, int offset) {
         IFileElementType fileElementType = psiFile.getFileElementType();
         if (fileElementType != KteTokenTypes.FILE) {
             return ThreeState.UNSURE;
