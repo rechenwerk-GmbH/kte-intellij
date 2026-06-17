@@ -67,7 +67,7 @@ public class KteTemplateContractDiagnosticCheckerTest extends KteK2FixtureSuppor
     private List<String> contractDescriptions() {
         return new KteTemplateContractDiagnosticChecker().collect(myFixture.getFile())
                 .stream()
-                .map(KteSyntheticKotlinDiagnosticCollector.Diagnostic::message)
+                .map(KteTemplateDiagnostic::message)
                 .toList();
     }
 }

@@ -5,7 +5,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.kotlin.psi.KtClass;
 
-public class KteSyntheticKotlinReferenceRefactoringTest extends KteK2FixtureSupport {
+public class KteKotlinReferenceRefactoringTest extends KteK2FixtureSupport {
     public void testHandleRenameUpdatesOutputPropertyReference() {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example

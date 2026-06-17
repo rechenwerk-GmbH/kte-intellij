@@ -7,7 +7,7 @@ import com.intellij.platform.backend.documentation.DocumentationTarget;
 import com.intellij.platform.backend.documentation.PsiDocumentationTargetProvider;
 import com.intellij.psi.PsiElement;
 
-public class KteSyntheticKotlinDocumentationProviderTest extends KteK2FixtureSupport {
+public class KteKotlinDocumentationProviderTest extends KteK2FixtureSupport {
     public void testQuickNavigateInfoForTemplateParamShowsDeclarationType() {
         addProfileClass();
 
@@ -236,14 +236,14 @@ public class KteSyntheticKotlinDocumentationProviderTest extends KteK2FixtureSup
     }
 
     private String quickNavigateInfoAtCaret() {
-        KteSyntheticKotlinDocumentationProvider provider = new KteSyntheticKotlinDocumentationProvider();
+        KteKotlinDocumentationProvider provider = new KteKotlinDocumentationProvider();
         PsiElement element = elementAtCaret();
         PsiElement documentationElement = documentationElementAtCaret(provider, element);
         return documentationElement == null ? null : provider.getQuickNavigateInfo(documentationElement, element);
     }
 
     private String platformDocumentationHintAtCaret() {
-        KteSyntheticKotlinDocumentationProvider provider = new KteSyntheticKotlinDocumentationProvider();
+        KteKotlinDocumentationProvider provider = new KteKotlinDocumentationProvider();
         PsiElement element = elementAtCaret();
         PsiElement documentationElement = documentationElementAtCaret(provider, element);
         assertNotNull(documentationElement);
@@ -264,7 +264,7 @@ public class KteSyntheticKotlinDocumentationProviderTest extends KteK2FixtureSup
     }
 
     private String documentationAtCaret() {
-        KteSyntheticKotlinDocumentationProvider provider = new KteSyntheticKotlinDocumentationProvider();
+        KteKotlinDocumentationProvider provider = new KteKotlinDocumentationProvider();
         PsiElement element = elementAtCaret();
         PsiElement documentationElement = documentationElementAtCaret(provider, element);
         return documentationElement == null ? null : provider.generateDoc(documentationElement, element);
@@ -283,7 +283,7 @@ public class KteSyntheticKotlinDocumentationProviderTest extends KteK2FixtureSup
         return element;
     }
 
-    private PsiElement documentationElementAtCaret(KteSyntheticKotlinDocumentationProvider provider, PsiElement element) {
+    private PsiElement documentationElementAtCaret(KteKotlinDocumentationProvider provider, PsiElement element) {
         return provider.getCustomDocumentationElement(
                 myFixture.getEditor(),
                 myFixture.getFile(),

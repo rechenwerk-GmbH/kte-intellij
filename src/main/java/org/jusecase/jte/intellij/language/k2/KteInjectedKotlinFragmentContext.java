@@ -150,13 +150,13 @@ record KteInjectedKotlinFragmentContext(@NotNull Map<String, String> parameters,
 
     @NotNull
     private static KaModule contextModule(@NotNull KtePsiJavaContent host) {
-        KteSyntheticKotlinAnalysisContextService contextService =
-                KteSyntheticKotlinAnalysisContextService.getInstance(host.getProject());
+        KteKotlinAnalysisContextService contextService =
+                KteKotlinAnalysisContextService.getInstance(host.getProject());
         PsiElement analysisContext = contextService.findAnalysisContext(
                 host.getContainingFile(),
                 contextService.findModuleSourceRoot(host.getContainingFile())
         );
-        return KteSyntheticKotlinModuleContext.contextModule(host.getProject(), analysisContext);
+        return KteKotlinModuleContext.contextModule(host.getProject(), analysisContext);
     }
 
     @NotNull

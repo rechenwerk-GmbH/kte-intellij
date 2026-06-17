@@ -22,14 +22,14 @@ import org.jetbrains.kotlin.psi.KtPsiFactoryKt;
 
 import java.util.List;
 
-final class KteSyntheticKotlinModuleContext {
-    private KteSyntheticKotlinModuleContext() {
+final class KteKotlinModuleContext {
+    private KteKotlinModuleContext() {
     }
 
     static void configure(@NotNull Project project,
                           @NotNull KtFile ktFile,
                           @Nullable PsiElement analysisContext) {
-        // Boundary for K2 project-structure hooks: synthetic .kte files must analyze as source in the real module.
+        // Boundary for K2 project-structure hooks: scratch .kte fragments must analyze as source in the real module.
         KotlinProjectStructureCustomizationUtils.setCustomSourceRootType(ktFile, JavaSourceRootType.SOURCE);
         if (analysisContext == null) {
             return;
@@ -70,7 +70,7 @@ final class KteSyntheticKotlinModuleContext {
     }
 
     private static void setPreferSelfDanglingModule(@NotNull KtFile ktFile, @NotNull KaModule contextModule) {
-        // Native completion needs the synthetic file as use-site; the real module only supplies dependencies.
+        // Native completion needs the scratch file as use-site; the real module only supplies dependencies.
         KaDanglingFileModuleImpl module = new KaDanglingFileModuleImpl(
                 List.of(ktFile),
                 contextModule,

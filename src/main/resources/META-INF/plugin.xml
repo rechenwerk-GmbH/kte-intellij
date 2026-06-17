@@ -9,12 +9,12 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 <h3>Features</h3>
 <ul>
     <li><code>.kte</code> file type support.</li>
-    <li>Kotlin K2 completion, resolve, references, documentation, and diagnostics.</li>
+    <li>Kotlin K2 completion, resolve, references, documentation, and injected-fragment diagnostics.</li>
     <li>Template navigation, parameter checks, formatting, folding, brace matching, and live templates.</li>
 </ul>
 
 <p>
-Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin fragments; other Kotlin semantics use a synthetic Kotlin model.
+Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped injected fragments.
 </p>
     ]]></description>
 
@@ -48,7 +48,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
         <lang.findUsagesProvider language="KotlinTemplateEngine"
                                  implementationClass="org.jusecase.jte.intellij.language.refactoring.KteFindUsagesProvider"/>
         <lang.documentationProvider language="KotlinTemplateEngine"
-                                    implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDocumentationProvider"/>
+                                    implementationClass="org.jusecase.jte.intellij.language.k2.KteKotlinDocumentationProvider"/>
         <completion.contributor language="KotlinTemplateEngine"
                                 implementationClass="org.jusecase.jte.intellij.language.completion.KteCompletionContributor"/>
         <completion.contributor language="kotlin"
@@ -67,7 +67,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
 
         <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteStructuralAnnotator"/>
         <annotator language="KotlinTemplateEngine"
-                   implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDiagnosticAnnotator"/>
+                   implementationClass="org.jusecase.jte.intellij.language.k2.KteTemplateDiagnosticAnnotator"/>
         <intentionAction>
             <className>org.jusecase.jte.intellij.language.refactoring.KteOptimizeImportsIntention</className>
             <category>KTE</category>
@@ -90,8 +90,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
         <codeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteCodeStyleSettingsProvider"/>
         <langCodeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteLanguageCodeStyleSettingsProvider"/>
 
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinAnalysisContextService"/>
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinModelService"/>
+        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteKotlinAnalysisContextService"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
@@ -102,12 +101,6 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
         <action id="de.rechenwerk.kte.CreateKteFileAction" class="org.jusecase.jte.intellij.language.file.CreateKteFileAction">
             <add-to-group group-id="NewGroup" relative-to-action="NewHtmlFile" anchor="after"/>
         </action>
-        <group id="de.rechenwerk.kte.KteToolsGroup" text="KTE" popup="true">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <action id="de.rechenwerk.kte.OpenSyntheticKotlinAction"
-                    class="org.jusecase.jte.intellij.language.k2.KteOpenSyntheticKotlinAction"
-                    text="Open Synthetic Kotlin for Current .kte"/>
-        </group>
     </actions>
 
     <applicationListeners>

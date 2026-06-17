@@ -10,29 +10,32 @@ import org.jetbrains.kotlin.idea.KotlinLanguage;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtPsiFactory;
 
-public final class KteSyntheticKotlinPsiFactory {
-    private KteSyntheticKotlinPsiFactory() {
-    }
-
-    @NotNull
-    public static KtFile createKtFile(@NotNull Project project, @NotNull KteSyntheticKotlinFile syntheticFile) {
-        return createKtFile(project, syntheticFile, null);
+public final class KteKotlinScratchFileFactory {
+    private KteKotlinScratchFileFactory() {
     }
 
     @NotNull
     public static KtFile createKtFile(@NotNull Project project,
-                                      @NotNull KteSyntheticKotlinFile syntheticFile,
+                                      @NotNull String fileName,
+                                      @NotNull String text) {
+        return createKtFile(project, fileName, text, null);
+    }
+
+    @NotNull
+    public static KtFile createKtFile(@NotNull Project project,
+                                      @NotNull String fileName,
+                                      @NotNull String text,
                                       @Nullable PsiElement analysisContext) {
         PsiFile psiFile;
         if (analysisContext == null) {
             psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-                    syntheticFile.getFileName(),
+                    fileName,
                     KotlinLanguage.INSTANCE,
-                    syntheticFile.getText()
+                    text
             );
         } else {
             psiFile = KtPsiFactory.Companion.contextual(analysisContext, false, false)
-                    .createFile(syntheticFile.getFileName(), syntheticFile.getText());
+                    .createFile(fileName, text);
         }
 
         if (psiFile instanceof KtFile ktFile) {
@@ -40,12 +43,12 @@ public final class KteSyntheticKotlinPsiFactory {
             return ktFile;
         }
 
-        throw new IllegalStateException("Synthetic Kotlin text did not produce a KtFile: " + psiFile.getClass().getName());
+        throw new IllegalStateException("Kotlin scratch text did not produce a KtFile: " + psiFile.getClass().getName());
     }
 
     static void configureAnalysisContext(@NotNull Project project,
                                          @NotNull KtFile ktFile,
                                          @Nullable PsiElement analysisContext) {
-        KteSyntheticKotlinModuleContext.configure(project, ktFile, analysisContext);
+        KteKotlinModuleContext.configure(project, ktFile, analysisContext);
     }
 }

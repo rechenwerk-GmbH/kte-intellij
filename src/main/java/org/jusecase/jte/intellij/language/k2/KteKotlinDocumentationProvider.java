@@ -23,7 +23,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiTemplateName;
 
 import java.util.Collection;
 
-public final class KteSyntheticKotlinDocumentationProvider extends AbstractDocumentationProvider {
+public final class KteKotlinDocumentationProvider extends AbstractDocumentationProvider {
     @Override
     public @Nullable PsiElement getCustomDocumentationElement(Editor editor,
                                                              PsiFile file,

@@ -4,7 +4,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
@@ -16,21 +15,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 
-import java.io.IOException;
 import java.util.List;
 
-public final class KteSyntheticKotlinAnalysisContextService {
-    private static final String SYNTHETIC_DIRECTORY_NAME = ".jte-synthetic";
-
+public final class KteKotlinAnalysisContextService {
     private final Project project;
 
-    public KteSyntheticKotlinAnalysisContextService(@NotNull Project project) {
+    public KteKotlinAnalysisContextService(@NotNull Project project) {
         this.project = project;
     }
 
     @NotNull
-    public static KteSyntheticKotlinAnalysisContextService getInstance(@NotNull Project project) {
-        return project.getService(KteSyntheticKotlinAnalysisContextService.class);
+    public static KteKotlinAnalysisContextService getInstance(@NotNull Project project) {
+        return project.getService(KteKotlinAnalysisContextService.class);
     }
 
     @NotNull
@@ -85,17 +81,5 @@ public final class KteSyntheticKotlinAnalysisContextService {
 
         PsiDirectory sourceDirectory = PsiManager.getInstance(project).findDirectory(sourceRoot);
         return sourceDirectory == null ? templateFile : sourceDirectory;
-    }
-
-    @NotNull
-    public VirtualFile resolveSyntheticDirectory(@NotNull VirtualFile sourceRoot) throws IOException {
-        VirtualFile directory = sourceRoot.findChild(SYNTHETIC_DIRECTORY_NAME);
-        if (directory != null && directory.isDirectory()) {
-            return directory;
-        } else if (directory != null) {
-            throw new IOException("Synthetic Kotlin path exists but is not a directory: " + directory.getPath());
-        }
-
-        return VfsUtil.createDirectoryIfMissing(sourceRoot, SYNTHETIC_DIRECTORY_NAME);
     }
 }

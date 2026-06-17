@@ -2,8 +2,8 @@ package org.jusecase.jte.intellij.language.k2;
 
 import org.jetbrains.annotations.NotNull;
 
-final class KteSyntheticKotlinGeneratedNames {
-    private KteSyntheticKotlinGeneratedNames() {
+final class KteGeneratedKotlinNames {
+    private KteGeneratedKotlinNames() {
     }
 
     static boolean isGeneratedLookup(@NotNull String lookupString) {

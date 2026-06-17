@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class KteSyntheticKotlinReferenceSearchTest extends KteK2FixtureSupport {
+public class KteKotlinReferenceSearchTest extends KteK2FixtureSupport {
     public void testReferencesSearchFindsOutputPropertyReference() throws Exception {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example

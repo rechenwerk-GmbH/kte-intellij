@@ -367,7 +367,7 @@ public final class KteKotlinCompletionSupplement {
                               @NotNull CompletionCandidate candidate) {
         if (candidate.lookupString().isBlank() ||
                 KteCompletionLookupPolicy.isGeneratedComponentFunction(candidate.lookupString()) ||
-                KteSyntheticKotlinGeneratedNames.isGeneratedLookup(candidate.lookupString()) ||
+                KteGeneratedKotlinNames.isGeneratedLookup(candidate.lookupString()) ||
                 "Companion".equals(candidate.lookupString())) {
             return;
         }

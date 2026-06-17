@@ -39,7 +39,7 @@ final class KteCompletionLookupPolicy {
     private static boolean isHiddenLookupString(@NotNull String lookupString,
                                                 @NotNull Set<String> hiddenLookupStrings) {
         return isGeneratedComponentFunction(lookupString) ||
-                KteSyntheticKotlinGeneratedNames.isGeneratedLookup(lookupString) ||
+                KteGeneratedKotlinNames.isGeneratedLookup(lookupString) ||
                 hiddenLookupStrings.contains(lookupString) ||
                 "INSTANCE".equals(lookupString);
     }

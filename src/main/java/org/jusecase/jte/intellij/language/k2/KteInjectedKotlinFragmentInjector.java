@@ -28,7 +28,7 @@ public final class KteInjectedKotlinFragmentInjector implements MultiHostInjecto
             return;
         }
 
-        Key<KaModule> contextModuleKey = KteSyntheticKotlinModuleContext.contextModuleUserDataKey();
+        Key<KaModule> contextModuleKey = KteKotlinModuleContext.contextModuleUserDataKey();
         for (KteInjectedKotlinFragmentPlace place : injectionContext.places()) {
             MultiHostRegistrar kotlinRegistrar = registrar.startInjecting(KotlinFileType.INSTANCE.getLanguage())
                     .makeInspectionsLenient(true);

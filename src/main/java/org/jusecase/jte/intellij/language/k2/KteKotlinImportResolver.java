@@ -47,7 +47,7 @@ final class KteKotlinImportResolver {
     KteKotlinImportResolver(@NotNull PsiFile templateFile) {
         this.templateFile = templateFile;
         this.project = templateFile.getProject();
-        this.scope = KteSyntheticKotlinAnalysisContextService.getInstance(project).resolveSearchScope(templateFile);
+        this.scope = KteKotlinAnalysisContextService.getInstance(project).resolveSearchScope(templateFile);
     }
 
     @Nullable

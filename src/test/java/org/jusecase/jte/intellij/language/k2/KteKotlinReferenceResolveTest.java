@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction;
 
 import java.util.Set;
 
-public class KteSyntheticKotlinReferenceResolveTest extends KteK2FixtureSupport {
+public class KteKotlinReferenceResolveTest extends KteK2FixtureSupport {
     public void testParamTypeReferenceResolvesToImportedKotlinClass() {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example
@@ -284,7 +284,7 @@ public class KteSyntheticKotlinReferenceResolveTest extends KteK2FixtureSupport 
         assertEquals("HiddenHttpMethod", ((KtClass) resolved).getName());
     }
 
-    public void testCompanionPropertyReferenceResolvesThroughSyntheticKotlin() {
+    public void testCompanionPropertyReferenceResolvesThroughInjectedKotlinFragment() {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example
 

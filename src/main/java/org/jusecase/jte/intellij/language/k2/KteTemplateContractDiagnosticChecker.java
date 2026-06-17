@@ -23,8 +23,8 @@ import java.util.Set;
 
 final class KteTemplateContractDiagnosticChecker {
     @NotNull
-    List<KteSyntheticKotlinDiagnosticCollector.Diagnostic> collect(@NotNull PsiFile templateFile) {
-        List<KteSyntheticKotlinDiagnosticCollector.Diagnostic> result = new ArrayList<>();
+    List<KteTemplateDiagnostic> collect(@NotNull PsiFile templateFile) {
+        List<KteTemplateDiagnostic> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (JtePsiTemplate template : PsiTreeUtil.findChildrenOfType(templateFile, JtePsiTemplate.class)) {
             JtePsiTemplateName templateName = JtePsiUtil.getLastChildOfType(template, JtePsiTemplateName.class);
@@ -46,7 +46,7 @@ final class KteTemplateContractDiagnosticChecker {
 
     private void collectTemplateCallDiagnostics(@NotNull JtePsiTemplate template,
                                                 @NotNull KteTemplateSignatureService.TemplateSignature signature,
-                                                @NotNull List<KteSyntheticKotlinDiagnosticCollector.Diagnostic> result,
+                                                @NotNull List<KteTemplateDiagnostic> result,
                                                 @NotNull Set<String> seen) {
         Map<String, KteTemplateCallArguments.Argument> namedArguments = new LinkedHashMap<>();
         List<KteTemplateCallArguments.Argument> arguments = KteTemplateCallArguments.parse(template);
@@ -105,7 +105,7 @@ final class KteTemplateContractDiagnosticChecker {
                 .toList();
     }
 
-    private void add(@NotNull List<KteSyntheticKotlinDiagnosticCollector.Diagnostic> result,
+    private void add(@NotNull List<KteTemplateDiagnostic> result,
                      @NotNull Set<String> seen,
                      @NotNull String message,
                      @NotNull TextRange range,
@@ -113,11 +113,10 @@ final class KteTemplateContractDiagnosticChecker {
         HighlightSeverity severity = HighlightSeverity.ERROR;
         String key = severity + ":" + message + ":" + range;
         if (seen.add(key)) {
-            result.add(new KteSyntheticKotlinDiagnosticCollector.Diagnostic(
+            result.add(new KteTemplateDiagnostic(
                     severity,
                     message,
                     range,
-                    KteSyntheticKotlinDiagnosticCollector.Origin.TEMPLATE_STRUCTURE,
                     fixes
             ));
         }

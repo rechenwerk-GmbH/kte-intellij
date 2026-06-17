@@ -29,7 +29,6 @@ import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -134,15 +133,16 @@ final class KteKotlinFragmentSemanticService {
     private static KtFile createKtFile(@NotNull PsiFile containingFile,
                                        @NotNull String fileName,
                                        @NotNull String text) {
-        KteSyntheticKotlinAnalysisContextService contextService =
-                KteSyntheticKotlinAnalysisContextService.getInstance(containingFile.getProject());
+        KteKotlinAnalysisContextService contextService =
+                KteKotlinAnalysisContextService.getInstance(containingFile.getProject());
         PsiElement analysisContext = contextService.findAnalysisContext(
                 containingFile,
                 contextService.findModuleSourceRoot(containingFile)
         );
-        return KteSyntheticKotlinPsiFactory.createKtFile(
+        return KteKotlinScratchFileFactory.createKtFile(
                 containingFile.getProject(),
-                new KteSyntheticKotlinFile(fileName, text, List.of()),
+                fileName,
+                text,
                 analysisContext
         );
     }
