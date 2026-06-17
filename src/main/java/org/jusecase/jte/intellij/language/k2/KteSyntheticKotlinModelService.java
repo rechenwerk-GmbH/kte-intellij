@@ -6,7 +6,6 @@ import com.intellij.openapi.roots.ProjectRootModificationTracker;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.CachedValue;
 import com.intellij.psi.util.CachedValueProvider;
@@ -43,26 +42,6 @@ public final class KteSyntheticKotlinModelService {
                         ProjectRootModificationTracker.getInstance(project)
                 ),
                 false
-        );
-    }
-
-    @NotNull
-    public KteSyntheticKotlinModel getCompletionModel(@NotNull PsiFile templateFile, int templateOffset) {
-        PsiFile originalTemplateFile = templateFile.getOriginalFile();
-        if (!KteTemplateSignatureService.isKteTemplate(originalTemplateFile)) {
-            originalTemplateFile = templateFile;
-        }
-
-        KteSyntheticKotlinAnalysisContextService contextService =
-                KteSyntheticKotlinAnalysisContextService.getInstance(project);
-        VirtualFile sourceRoot = contextService.findModuleSourceRoot(originalTemplateFile);
-        PsiElement analysisContext = contextService.findAnalysisContext(originalTemplateFile, sourceRoot);
-        KteSyntheticKotlinFile syntheticFile =
-                new KteSyntheticKotlinFileBuilder().buildForCompletion(templateFile, templateOffset);
-        return new KteSyntheticKotlinModel(
-                syntheticFile,
-                KteSyntheticKotlinPsiFactory.createKtFile(project, syntheticFile, analysisContext),
-                sourceRoot
         );
     }
 

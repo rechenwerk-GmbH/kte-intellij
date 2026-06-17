@@ -116,6 +116,12 @@ public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContribu
         @Override
         public @Nullable PsiElement resolve() {
             PsiFile templateFile = myElement.getContainingFile();
+            PsiElement fragmentTarget =
+                    KteKotlinFragmentSemanticService.resolveReferenceAtTemplateRange(myElement, getRangeInElement());
+            if (fragmentTarget != null) {
+                return fragmentTarget;
+            }
+
             return KteSyntheticKotlinSemanticService.getInstance(templateFile.getProject())
                     .resolveReferenceAtTemplateRange(myElement, getRangeInElement());
         }

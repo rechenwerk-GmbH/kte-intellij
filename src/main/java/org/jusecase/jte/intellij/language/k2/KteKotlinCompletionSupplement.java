@@ -7,45 +7,27 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.injected.editor.DocumentWindow;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.kotlin.analysis.api.AnalyzeKt;
-import org.jetbrains.kotlin.analysis.api.KaSession;
-import org.jetbrains.kotlin.analysis.api.scopes.KaScope;
-import org.jetbrains.kotlin.analysis.api.scopes.KaTypeScope;
-import org.jetbrains.kotlin.analysis.api.signatures.KaCallableSignature;
-import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaClassifierSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.KaSyntheticJavaPropertySymbol;
-import org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol;
-import org.jetbrains.kotlin.analysis.api.types.KaType;
-import org.jetbrains.kotlin.idea.references.KtReference;
-import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.psi.KtClassOrObject;
-import org.jetbrains.kotlin.psi.KtExpression;
-import org.jetbrains.kotlin.psi.KtFile;
+import org.jetbrains.kotlin.psi.KtDeclaration;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
+import org.jetbrains.kotlin.psi.KtNamedDeclaration;
 import org.jusecase.jte.intellij.language.KteLanguage;
 import org.jusecase.jte.intellij.language.refactoring.KteNativeTemplateSourceEditUtil;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;
 import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public final class KteKotlinCompletionSupplement {
     public void addExpressionCompletions(@NotNull CompletionResultSet result,
@@ -56,7 +38,7 @@ public final class KteKotlinCompletionSupplement {
         CompletionResultSet prefixedResult = result.withPrefixMatcher(prefix);
         Map<String, CompletionCandidate> candidates = new LinkedHashMap<>();
         if (receiverAccess(templateFile.getText(), hostOffset) != null) {
-            addReceiverCandidates(candidates, templateFile, hostOffset);
+            addSimpleReceiverCandidates(candidates, templateFile, hostOffset);
             addImportedVisibleNameCandidates(candidates, templateFile);
         } else if (!prefix.isBlank()) {
             candidates.putAll(importCandidates(templateFile, prefix, true));
@@ -97,48 +79,151 @@ public final class KteKotlinCompletionSupplement {
         return result;
     }
 
-    private void addReceiverCandidates(@NotNull Map<String, CompletionCandidate> result,
-                                       @NotNull PsiFile templateFile,
-                                       int hostOffset) {
-        try {
-            KteSyntheticKotlinModel model =
-                    KteSyntheticKotlinModelService.getInstance(templateFile.getProject()).getCompletionModel(templateFile, hostOffset);
-            Integer kotlinOffset = model.getSyntheticFile().mapTemplateOffsetToKotlin(hostOffset);
-            if (kotlinOffset == null) {
-                return;
-            }
-
-            ReceiverAccess receiverAccess = receiverAccess(model.getSyntheticFile().getText(), kotlinOffset);
-            if (receiverAccess == null) {
-                return;
-            }
-
-            AnalyzeKt.analyze(model.getKtFile(), session -> {
-                KtExpression receiverExpression = receiverExpression(model.getKtFile(), receiverAccess.receiverEndOffset());
-                if (receiverExpression != null) {
-                    KaType receiverType = session.getExpressionType(receiverExpression);
-                    if (receiverType != null) {
-                        KaTypeScope syntheticJavaPropertiesScope = session.getSyntheticJavaPropertiesScope(receiverType);
-                        Set<String> syntheticJavaAccessors = syntheticJavaPropertyAccessorNames(syntheticJavaPropertiesScope);
-                        addTypeScopeCandidates(session, session.getScope(receiverType), syntheticJavaAccessors, result);
-                        addTypeScopeCandidates(session, syntheticJavaPropertiesScope, Set.of(), result);
-                    }
-                }
-
-                KaClassSymbol classSymbol = referencedClassSymbol(session, model.getKtFile(), receiverAccess.receiverEndOffset());
-                if (classSymbol != null) {
-                    addScopeCandidates(session, session.getStaticMemberScope(classSymbol), result);
-                    addScopeCandidates(session, session.getMemberScope(classSymbol), result);
-                    if (classSymbol instanceof KaNamedClassSymbol namedClassSymbol &&
-                            namedClassSymbol.getCompanionObject() != null) {
-                        addScopeCandidates(session, session.getMemberScope(namedClassSymbol.getCompanionObject()), result);
-                    }
-                }
-                return null;
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
+    private void addSimpleReceiverCandidates(@NotNull Map<String, CompletionCandidate> result,
+                                             @NotNull PsiFile templateFile,
+                                             int hostOffset) {
+        ReceiverAccess receiverAccess = receiverAccess(templateFile.getText(), hostOffset);
+        if (receiverAccess == null) {
+            return;
         }
+
+        String receiverText = receiverText(templateFile.getText(), receiverAccess.receiverEndOffset());
+        if (receiverText == null) {
+            return;
+        }
+
+        addParameterTypeMembers(result, templateFile, receiverText);
+        addKotlinObjectMembers(result, templateFile, receiverText);
+    }
+
+    private void addParameterTypeMembers(@NotNull Map<String, CompletionCandidate> result,
+                                         @NotNull PsiFile templateFile,
+                                         @NotNull String receiverText) {
+        if (receiverText.contains(".")) {
+            return;
+        }
+
+        KteTemplateSignatureService.Parameter parameter =
+                KteTemplateSignatureService.resolve(templateFile).parameter(receiverText);
+        if (parameter == null || parameter.typeClass() == null) {
+            return;
+        }
+
+        addPsiClassMembers(result, parameter.typeClass());
+    }
+
+    private void addKotlinObjectMembers(@NotNull Map<String, CompletionCandidate> result,
+                                        @NotNull PsiFile templateFile,
+                                        @NotNull String receiverText) {
+        KtClassOrObject classOrObject = resolveKotlinClassOrObject(templateFile, receiverText);
+        if (classOrObject == null) {
+            return;
+        }
+
+        addKtClassOrObjectMembers(result, classOrObject);
+        KtClassOrObject companion = classOrObject.getCompanionObjects().isEmpty()
+                ? null
+                : classOrObject.getCompanionObjects().getFirst();
+        if (companion != null) {
+            addKtClassOrObjectMembers(result, companion);
+        }
+    }
+
+    @Nullable
+    private KtClassOrObject resolveKotlinClassOrObject(@NotNull PsiFile templateFile,
+                                                       @NotNull String receiverText) {
+        String[] parts = receiverText.split("\\.");
+        if (parts.length == 0) {
+            return null;
+        }
+
+        KteKotlinImportResolver importResolver = new KteKotlinImportResolver(templateFile);
+        KtClassOrObject current = null;
+        for (KteKotlinImportResolver.ImportCandidate candidate : importResolver.importCandidates(parts[0], false)) {
+            PsiElement navigationElement = importResolver.navigationElement(candidate.element());
+            if (navigationElement instanceof KtClassOrObject classOrObject) {
+                current = classOrObject;
+                break;
+            }
+        }
+        if (current == null) {
+            return null;
+        }
+
+        for (int index = 1; index < parts.length; index++) {
+            current = nestedClassOrObject(current, parts[index]);
+            if (current == null) {
+                return null;
+            }
+        }
+        return current;
+    }
+
+    @Nullable
+    private KtClassOrObject nestedClassOrObject(@NotNull KtClassOrObject parent, @NotNull String name) {
+        for (KtDeclaration declaration : parent.getDeclarations()) {
+            if (declaration instanceof KtClassOrObject classOrObject && name.equals(classOrObject.getName())) {
+                return classOrObject;
+            }
+        }
+        return null;
+    }
+
+    private void addKtClassOrObjectMembers(@NotNull Map<String, CompletionCandidate> result,
+                                           @NotNull KtClassOrObject classOrObject) {
+        for (KtDeclaration declaration : classOrObject.getDeclarations()) {
+            if (declaration instanceof KtNamedDeclaration namedDeclaration && namedDeclaration.getName() != null) {
+                addCandidate(result, new CompletionCandidate(
+                        namedDeclaration.getName(),
+                        null,
+                        declaration instanceof KtNamedFunction function && function.getValueParameters().isEmpty(),
+                        declaration
+                ));
+            }
+        }
+    }
+
+    private void addPsiClassMembers(@NotNull Map<String, CompletionCandidate> result,
+                                    @NotNull PsiClass psiClass) {
+        for (PsiField field : psiClass.getAllFields()) {
+            addCandidate(result, new CompletionCandidate(field.getName(), null, false, field));
+        }
+        for (PsiClass innerClass : psiClass.getInnerClasses()) {
+            if (innerClass.getName() != null) {
+                addCandidate(result, new CompletionCandidate(innerClass.getName(), null, false, innerClass));
+            }
+        }
+        for (PsiMethod method : psiClass.getAllMethods()) {
+            addBeanPropertyCandidate(result, method);
+        }
+    }
+
+    private void addBeanPropertyCandidate(@NotNull Map<String, CompletionCandidate> result,
+                                          @NotNull PsiMethod method) {
+        if (method.getParameterList().getParametersCount() != 0) {
+            return;
+        }
+
+        String propertyName = propertyName(method.getName());
+        if (propertyName != null) {
+            addCandidate(result, new CompletionCandidate(propertyName, null, false, method));
+        }
+    }
+
+    @Nullable
+    private String propertyName(@NotNull String methodName) {
+        if (methodName.startsWith("get") && methodName.length() > "get".length()) {
+            return decapitalize(methodName.substring("get".length()));
+        }
+        if (methodName.startsWith("is") && methodName.length() > "is".length()) {
+            return decapitalize(methodName.substring("is".length()));
+        }
+        return null;
+    }
+
+    @NotNull
+    private String decapitalize(@NotNull String text) {
+        return text.isEmpty() ? text : Character.toLowerCase(text.charAt(0)) + text.substring(1);
     }
 
     private void addImportedVisibleNameCandidates(@NotNull Map<String, CompletionCandidate> result,
@@ -149,64 +234,6 @@ public final class KteKotlinCompletionSupplement {
                 addCandidate(result, new CompletionCandidate(importInfo.visibleName(), null, false, null));
             }
         }
-    }
-
-    private void addScopeCandidates(@NotNull KaSession session,
-                                    @NotNull KaScope scope,
-                                    @NotNull Map<String, CompletionCandidate> result) {
-        for (KaCallableSymbol symbol : iterable(scope.callables(name -> true))) {
-            addCallableCandidate(symbol, Set.of(), result);
-        }
-        for (KaClassifierSymbol symbol : iterable(scope.classifiers(name -> true))) {
-            addClassifierCandidate(symbol, result);
-        }
-    }
-
-    private void addTypeScopeCandidates(@NotNull KaSession session,
-                                        @NotNull KaTypeScope scope,
-                                        @NotNull Set<String> hiddenLookupStrings,
-                                        @NotNull Map<String, CompletionCandidate> result) {
-        for (KaCallableSignature<?> signature : iterable(scope.getCallableSignatures(name -> true))) {
-            addCallableCandidate(signature.getSymbol(), hiddenLookupStrings, result);
-        }
-        for (KaClassifierSymbol symbol : iterable(scope.getClassifierSymbols(name -> true))) {
-            addClassifierCandidate(symbol, result);
-        }
-    }
-
-    private void addCallableCandidate(@NotNull KaCallableSymbol symbol,
-                                      @NotNull Set<String> hiddenLookupStrings,
-                                      @NotNull Map<String, CompletionCandidate> result) {
-        if (!(symbol instanceof KaNamedSymbol namedSymbol)) {
-            return;
-        }
-
-        String lookupString = namedSymbol.getName().asString();
-        if (hiddenLookupStrings.contains(lookupString)) {
-            return;
-        }
-
-        addCandidate(result, new CompletionCandidate(
-                lookupString,
-                null,
-                false,
-                symbol.getPsi()
-        ));
-    }
-
-    private void addClassifierCandidate(@NotNull KaClassifierSymbol symbol,
-                                        @NotNull Map<String, CompletionCandidate> result) {
-        Name name = symbol.getName();
-        if (name.isSpecial()) {
-            return;
-        }
-
-        addCandidate(result, new CompletionCandidate(
-                name.asString(),
-                null,
-                false,
-                symbol.getPsi()
-        ));
     }
 
     @Nullable
@@ -223,61 +250,28 @@ public final class KteKotlinCompletionSupplement {
     }
 
     @Nullable
-    private KtExpression receiverExpression(@NotNull KtFile ktFile, int receiverEndOffset) {
-        PsiElement leaf = ktFile.findElementAt(Math.max(0, receiverEndOffset - 1));
-        KtExpression best = null;
-        for (PsiElement current = leaf; current != null && current != ktFile; current = current.getParent()) {
-            if (current instanceof KtExpression expression &&
-                    expression.getTextRange().getEndOffset() <= receiverEndOffset) {
-                best = expression;
+    private String receiverText(@NotNull String text, int receiverEndOffset) {
+        int index = Math.clamp(receiverEndOffset, 0, text.length());
+        while (index > 0 && Character.isWhitespace(text.charAt(index - 1))) {
+            index--;
+        }
+
+        int end = index;
+        while (index > 0) {
+            char current = text.charAt(index - 1);
+            if (Character.isJavaIdentifierPart(current) || current == '.') {
+                index--;
+            } else {
+                break;
             }
         }
 
-        return best;
-    }
-
-    @Nullable
-    private KaClassSymbol referencedClassSymbol(@NotNull KaSession session,
-                                                @NotNull KtFile ktFile,
-                                                int receiverEndOffset) {
-        PsiReference reference = KteSyntheticKotlinSemanticService.findSyntheticReference(
-                ktFile,
-                Math.max(0, receiverEndOffset - 1)
-        );
-        if (!(reference instanceof KtReference ktReference)) {
+        if (index == end) {
             return null;
         }
 
-        Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
-        for (KaSymbol symbol : symbols) {
-            if (symbol instanceof KaClassSymbol classSymbol) {
-                return classSymbol;
-            }
-        }
-        return null;
-    }
-
-    @NotNull
-    private Set<String> syntheticJavaPropertyAccessorNames(@NotNull KaTypeScope scope) {
-        Set<String> result = new HashSet<>();
-        for (KaCallableSignature<?> signature : iterable(scope.getCallableSignatures(name -> true))) {
-            if (signature.getSymbol() instanceof KaSyntheticJavaPropertySymbol syntheticJavaPropertySymbol) {
-                addNamedFunctionName(result, syntheticJavaPropertySymbol.getJavaGetterSymbol());
-                addNamedFunctionName(result, syntheticJavaPropertySymbol.getJavaSetterSymbol());
-            }
-        }
-        return result;
-    }
-
-    private void addNamedFunctionName(@NotNull Set<String> result, @Nullable KaNamedFunctionSymbol symbol) {
-        if (symbol != null) {
-            result.add(symbol.getName().asString());
-        }
-    }
-
-    @NotNull
-    private static <T> Iterable<T> iterable(@NotNull kotlin.sequences.Sequence<T> sequence) {
-        return sequence::iterator;
+        String result = text.substring(index, end);
+        return result.endsWith(".") || result.startsWith(".") || result.contains("..") ? null : result;
     }
 
     private void addExplicitImportCandidates(@NotNull Map<String, CompletionCandidate> result,

@@ -118,21 +118,6 @@ public class KteSyntheticKotlinFileBuilderTest extends LightIdeaTestCase {
                 syntheticFile.getText().contains("IntellijIdeaRulezzz$"));
     }
 
-    public void testCompletionBuildSkipsFutureStatementDeclarations() {
-        PsiFile file = createFile("facility.kte", """
-                @param page: Page
-                ${careIntellijIdeaRulezzz}
-                !{val careOfferingForm = requireNotNull(page.careOfferingForm)}
-                """);
-        int completionOffset = file.getText().indexOf("IntellijIdeaRulezzz") + "IntellijIdeaRulezzz".length();
-
-        KteSyntheticKotlinFile syntheticFile = new KteSyntheticKotlinFileBuilder().buildForCompletion(file, completionOffset);
-
-        assertTrue(syntheticFile.getText(), syntheticFile.getText().contains("careIntellijIdeaRulezzz"));
-        assertFalse(syntheticFile.getText(), syntheticFile.getText().contains("careOfferingForm"));
-        assertNoSyntheticSyntaxErrors(syntheticFile);
-    }
-
     public void testMapsParameterDefaultsWithoutOverlappingDeclarationMapping() {
         PsiFile file = createFile("params.kte", """
                 @import com.example.Profile

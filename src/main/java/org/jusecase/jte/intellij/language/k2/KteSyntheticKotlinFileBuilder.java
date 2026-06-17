@@ -26,22 +26,12 @@ public final class KteSyntheticKotlinFileBuilder {
 
     @NotNull
     public KteSyntheticKotlinFile build(@NotNull PsiFile templateFile) {
-        return build(templateFile, null);
-    }
-
-    @NotNull
-    public KteSyntheticKotlinFile buildForCompletion(@NotNull PsiFile templateFile, int templateOffset) {
-        return build(templateFile, templateOffset);
-    }
-
-    @NotNull
-    private KteSyntheticKotlinFile build(@NotNull PsiFile templateFile, @Nullable Integer completionTemplateOffset) {
         KtePsiJavaContent host = PsiTreeUtil.findChildOfType(templateFile, KtePsiJavaContent.class);
         if (host == null) {
             return new KteSyntheticKotlinFile(syntheticFileName(templateFile), "", List.of());
         }
 
-        Builder builder = new Builder(templateFile, host, completionTemplateOffset);
+        Builder builder = new Builder(templateFile, host);
         return builder.build();
     }
 
@@ -61,14 +51,11 @@ public final class KteSyntheticKotlinFileBuilder {
         private final List<KteSyntheticKotlinRangeMapping> mappings = new ArrayList<>();
         private final Map<String, TemplateStub> templateStubs = new LinkedHashMap<>();
         private final KteSyntheticKotlinTypeRenderer typeRenderer;
-        @Nullable
-        private final Integer completionTemplateOffset;
         private int forElseCounter;
 
-        private Builder(PsiFile templateFile, KtePsiJavaContent host, @Nullable Integer completionTemplateOffset) {
+        private Builder(PsiFile templateFile, KtePsiJavaContent host) {
             this.templateFile = templateFile;
             this.host = host;
-            this.completionTemplateOffset = completionTemplateOffset;
             this.typeRenderer = new KteSyntheticKotlinTypeRenderer(templateFile);
         }
 
@@ -193,10 +180,6 @@ public final class KteSyntheticKotlinFileBuilder {
         }
 
         private void processTemplateBody(PsiElement child) {
-            if (isAfterCompletionCaret(child)) {
-                return;
-            }
-
             if (child instanceof JtePsiOutput output) {
                 appendContentAwareKotlinPart("jteOutput.writeUserContent(", ")\n", output, outputKind(output));
             } else if (child instanceof JtePsiStatement) {
@@ -228,13 +211,6 @@ public final class KteSyntheticKotlinFileBuilder {
                     processTemplateBody(element);
                 }
             }
-        }
-
-        private boolean isAfterCompletionCaret(@NotNull PsiElement child) {
-            return completionTemplateOffset != null &&
-                    child.getTextRange().getStartOffset() > completionTemplateOffset &&
-                    !(child instanceof JtePsiEndIf) &&
-                    !(child instanceof JtePsiEndFor);
         }
 
         private void appendTemplateCall(@NotNull JtePsiTemplate template) {

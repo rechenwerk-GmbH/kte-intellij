@@ -309,8 +309,6 @@ public final class KteSyntheticKotlinDocumentationProvider extends AbstractDocum
     @Nullable
     private PsiElement resolveReferenceNearOffset(@NotNull PsiFile file, int targetOffset) {
         int[] offsets = {targetOffset, targetOffset + 1, targetOffset - 1};
-        KteSyntheticKotlinSemanticService semanticService =
-                KteSyntheticKotlinSemanticService.getInstance(file.getProject());
         for (int offset : offsets) {
             if (offset < 0 || offset >= file.getTextLength()) {
                 continue;
@@ -322,11 +320,6 @@ public final class KteSyntheticKotlinDocumentationProvider extends AbstractDocum
                 if (resolved != null) {
                     return resolved;
                 }
-            }
-
-            PsiElement resolved = semanticService.resolveReferenceAtTemplateOffset(file, offset);
-            if (resolved != null) {
-                return resolved;
             }
         }
 

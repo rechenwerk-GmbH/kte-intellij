@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule;
-import org.jusecase.jte.intellij.language.psi.JtePsiElse;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;
 import org.jusecase.jte.intellij.language.psi.JtePsiIf;
@@ -240,7 +239,7 @@ record KteInjectedKotlinFragmentContext(@NotNull Map<String, String> parameters,
             JtePsiJavaInjection statementInjection = PsiTreeUtil.getChildOfType(statement, JtePsiJavaInjection.class);
             if (statementInjection == null ||
                     statementInjection.getTextRange().getEndOffset() > injection.getTextRange().getStartOffset() ||
-                    !isVisibleStatement(statement, injection)) {
+                    !KteKotlinFragmentVisibility.isVisibleStatement(statement, injection)) {
                 continue;
             }
 
@@ -249,16 +248,5 @@ record KteInjectedKotlinFragmentContext(@NotNull Map<String, String> parameters,
                 result.append(statementText).append('\n');
             }
         }
-    }
-
-    private boolean isVisibleStatement(@NotNull JtePsiStatement statement, @NotNull JtePsiJavaInjection injection) {
-        PsiElement blockOwner = PsiTreeUtil.getParentOfType(
-                statement,
-                JtePsiFor.class,
-                JtePsiIf.class,
-                JtePsiElseIf.class,
-                JtePsiElse.class
-        );
-        return blockOwner == null || PsiTreeUtil.isAncestor(blockOwner, injection, false);
     }
 }

@@ -135,7 +135,7 @@ public final class KteSyntheticKotlinSemanticService {
     }
 
     @Nullable
-    static PsiReference findSyntheticReference(@NotNull KtFile ktFile, int kotlinOffset) {
+    private static PsiReference findSyntheticReference(@NotNull KtFile ktFile, int kotlinOffset) {
         PsiElement leaf = ktFile.findElementAt(kotlinOffset);
         for (PsiElement current = leaf; current != null && current != ktFile; current = current.getParent()) {
             for (PsiReference reference : current.getReferences()) {
