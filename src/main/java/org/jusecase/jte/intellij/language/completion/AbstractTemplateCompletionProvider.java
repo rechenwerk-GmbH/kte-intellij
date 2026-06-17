@@ -8,7 +8,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
-import org.jusecase.jte.intellij.language.JteIcons;
+import org.jusecase.jte.intellij.language.KteIcons;
 import org.jusecase.jte.intellij.language.psi.JtePsiTemplateName;
 
 public abstract class AbstractTemplateCompletionProvider extends CompletionProvider<CompletionParameters> {
@@ -70,7 +70,7 @@ public abstract class AbstractTemplateCompletionProvider extends CompletionProvi
                 continue;
             }
 
-            result.addElement(LookupElementBuilder.create(referenceName).withInsertHandler(createAfterCompletionInsertHandler(file)).withIcon(JteIcons.ICON));
+            result.addElement(LookupElementBuilder.create(referenceName).withInsertHandler(createAfterCompletionInsertHandler(file)).withIcon(KteIcons.ICON));
         }
     }
 

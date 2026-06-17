@@ -9,7 +9,7 @@ import com.intellij.codeInsight.template.macro.CompleteMacro;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
-import org.jusecase.jte.intellij.language.k2.KteTemplateSignatureService;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 import java.util.List;
 

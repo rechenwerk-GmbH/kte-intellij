@@ -8,7 +8,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jusecase.jte.intellij.language.k2.KteTemplateSignatureService;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 public class KtePsiParamName extends JtePsiElement {
     public KtePsiParamName(@NotNull ASTNode node) {

@@ -9,12 +9,12 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 <h3>Features</h3>
 <ul>
     <li><code>.kte</code> file type support.</li>
-    <li>Kotlin K2 completion, resolve, references, documentation, and diagnostics.</li>
+    <li>Kotlin K2 completion, resolve, references, documentation, and injected-fragment diagnostics.</li>
     <li>Template navigation, parameter checks, formatting, folding, brace matching, and live templates.</li>
 </ul>
 
 <p>
-Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin fragments; other Kotlin semantics use a synthetic Kotlin model.
+Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped injected fragments.
 </p>
     ]]></description>
 
@@ -43,56 +43,54 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
 
         <lang.elementManipulator forClass="org.jusecase.jte.intellij.language.psi.KtePsiJavaContent"
                                  implementationClass="org.jusecase.jte.intellij.language.KteKotlinContentManipulator"/>
-        <multiHostInjector implementation="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinFragmentInjector"/>
+        <multiHostInjector implementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinFragmentInjector"/>
 
         <lang.findUsagesProvider language="KotlinTemplateEngine"
                                  implementationClass="org.jusecase.jte.intellij.language.refactoring.KteFindUsagesProvider"/>
         <lang.documentationProvider language="KotlinTemplateEngine"
-                                    implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDocumentationProvider"/>
+                                    implementationClass="org.jusecase.jte.intellij.language.KteKotlinDocumentationProvider"/>
         <completion.contributor language="KotlinTemplateEngine"
                                 implementationClass="org.jusecase.jte.intellij.language.completion.KteCompletionContributor"/>
         <completion.contributor language="kotlin"
                                 id="KteInjectedKotlinCompletionContributor"
                                 order="first, before KotlinCompletionContributor"
-                                implementationClass="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinCompletionContributor"/>
+                                implementationClass="org.jusecase.jte.intellij.language.completion.KteInjectedKotlinCompletionContributor"/>
 
         <defaultLiveTemplates file="liveTemplates/kte.xml"/>
-        <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.JteContext" contextId="kte"/>
-        <typedHandler implementation="org.jusecase.jte.intellij.language.completion.JteTypedActionHandler"/>
+        <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.KteLiveTemplateContext" contextId="kte"/>
+        <typedHandler implementation="org.jusecase.jte.intellij.language.completion.KteTypedActionHandler"/>
 
         <completion.confidence
                 language="HTML"
                 order="first"
-                implementationClass="org.jusecase.jte.intellij.language.completion.JteHtmlCompletionConfidence"/>
+                implementationClass="org.jusecase.jte.intellij.language.completion.KteHtmlCompletionConfidence"/>
 
-        <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.JteAnnotator"/>
+        <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteStructuralAnnotator"/>
         <annotator language="KotlinTemplateEngine"
-                   implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDiagnosticAnnotator"/>
+                   implementationClass="org.jusecase.jte.intellij.language.KteTemplateDiagnosticAnnotator"/>
         <intentionAction>
             <className>org.jusecase.jte.intellij.language.refactoring.KteOptimizeImportsIntention</className>
             <category>KTE</category>
             <language>KotlinTemplateEngine</language>
         </intentionAction>
 
-        <lang.commenter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.JteCommenter"/>
-        <useScopeEnlarger implementation="org.jusecase.jte.intellij.language.refactoring.JteUseScopeEnlarger"/>
+        <lang.commenter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteCommenter"/>
+        <useScopeEnlarger implementation="org.jusecase.jte.intellij.language.refactoring.KteUseScopeEnlarger"/>
 
         <lang.foldingBuilder language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteFoldingBuilder"/>
         <lang.braceMatcher language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteBraceMatcher"/>
-        <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.JteMoveFileHandler" id="KotlinTemplateEngine"/>
+        <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.KteMoveFileHandler" id="KotlinTemplateEngine"/>
 
-        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.JteFileReferenceContributor"/>
-        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinReferenceContributor"
+        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteFileReferenceContributor"/>
+        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteKotlinReferenceContributor"
                                   language="KotlinTemplateEngine"/>
-        <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.JteTemplateParamReferencesSearcher"/>
+        <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.KteTemplateParamReferencesSearcher"/>
 
         <lang.formatter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.format.KteFormattingModelBuilder"/>
         <codeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteCodeStyleSettingsProvider"/>
         <langCodeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteLanguageCodeStyleSettingsProvider"/>
 
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinAnalysisContextService"/>
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinModelService"/>
-        <projectService serviceImplementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinSemanticService"/>
+        <projectService serviceImplementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinAnalysisContextService"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
@@ -103,16 +101,10 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
         <action id="de.rechenwerk.kte.CreateKteFileAction" class="org.jusecase.jte.intellij.language.file.CreateKteFileAction">
             <add-to-group group-id="NewGroup" relative-to-action="NewHtmlFile" anchor="after"/>
         </action>
-        <group id="de.rechenwerk.kte.KteToolsGroup" text="KTE" popup="true">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <action id="de.rechenwerk.kte.OpenSyntheticKotlinAction"
-                    class="org.jusecase.jte.intellij.language.k2.KteOpenSyntheticKotlinAction"
-                    text="Open Synthetic Kotlin for Current .kte"/>
-        </group>
     </actions>
 
     <applicationListeners>
-        <listener class="org.jusecase.jte.intellij.language.JteFileReferenceContributor$FileChangeListener"
+        <listener class="org.jusecase.jte.intellij.language.KteFileReferenceContributor$FileChangeListener"
                   topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
     </applicationListeners>
 </idea-plugin>
