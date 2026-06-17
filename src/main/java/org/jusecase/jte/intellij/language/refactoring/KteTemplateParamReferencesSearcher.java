@@ -18,9 +18,9 @@ import org.jusecase.jte.intellij.language.KteFileType;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 import org.jusecase.jte.intellij.language.psi.KtePsiParamName;
 
-public class JteTemplateParamReferencesSearcher
+public class KteTemplateParamReferencesSearcher
         extends QueryExecutorBase<PsiReference, ReferencesSearch.SearchParameters> {
-    public JteTemplateParamReferencesSearcher() {
+    public KteTemplateParamReferencesSearcher() {
         super(true);
     }
 

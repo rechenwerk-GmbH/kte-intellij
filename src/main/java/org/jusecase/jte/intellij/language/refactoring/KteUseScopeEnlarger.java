@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.psi.KtNamedDeclaration;
 import org.jetbrains.kotlin.psi.KtParameter;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 
-public class JteUseScopeEnlarger extends UseScopeEnlarger {
+public class KteUseScopeEnlarger extends UseScopeEnlarger {
     @Nullable
     @Override
     public SearchScope getAdditionalUseScope(@NotNull PsiElement element) {

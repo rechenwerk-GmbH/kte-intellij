@@ -16,7 +16,7 @@ import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
 /**
  * Workaround to prevent HTML confidence from suppressing auto popup
  */
-public class JteHtmlCompletionConfidence extends CompletionConfidence {
+public class KteHtmlCompletionConfidence extends CompletionConfidence {
     @NotNull
     @Override
     public ThreeState shouldSkipAutopopup(@NotNull PsiElement contextElement, @NotNull PsiFile psiFile, int offset) {

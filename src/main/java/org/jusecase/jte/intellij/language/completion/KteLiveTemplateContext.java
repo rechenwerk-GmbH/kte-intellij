@@ -4,8 +4,8 @@ import com.intellij.codeInsight.template.TemplateActionContext;
 import com.intellij.codeInsight.template.TemplateContextType;
 import org.jetbrains.annotations.NotNull;
 
-public class JteContext extends TemplateContextType {
-    protected JteContext() {
+public class KteLiveTemplateContext extends TemplateContextType {
+    protected KteLiveTemplateContext() {
         super("kte");
     }
 

@@ -3,7 +3,7 @@ package org.jusecase.jte.intellij.language;
 import com.intellij.lang.Commenter;
 import org.jetbrains.annotations.Nullable;
 
-public class JteCommenter implements Commenter {
+public class KteCommenter implements Commenter {
     @Nullable
     @Override
     public String getLineCommentPrefix() {

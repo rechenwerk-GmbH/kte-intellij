@@ -41,7 +41,7 @@ import com.intellij.util.ProcessingContext;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;
 
 
-public class JteFileReferenceContributor extends PsiReferenceContributor {
+public class KteFileReferenceContributor extends PsiReferenceContributor {
 
    @Override
    public void registerReferenceProviders( @NotNull PsiReferenceRegistrar registrar ) {
@@ -49,8 +49,8 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
       registrar.registerReferenceProvider(PlatformPatterns.psiElement(KtStringTemplateExpression.class).and(new FilterPattern(new KotlinStringLiteralFilter())), new FileReferenceProvider());
    }
 
-   private static final ConcurrentHashMap<Project, Collection<String>> PROJECT_TO_JTE_DIRS_CACHE = new ConcurrentHashMap<>();
-   private static final ConcurrentHashMap<Module, Collection<String>>  MODULE_TO_JTE_DIRS_CACHE  = new ConcurrentHashMap<>();
+   private static final ConcurrentHashMap<Project, Collection<String>> PROJECT_TO_TEMPLATE_ROOTS_CACHE = new ConcurrentHashMap<>();
+   private static final ConcurrentHashMap<Module, Collection<String>>  MODULE_TO_TEMPLATE_ROOTS_CACHE  = new ConcurrentHashMap<>();
 
    private static class FileReferenceProvider extends PsiReferenceProvider {
       @Override
@@ -75,7 +75,7 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
             return PsiReference.EMPTY_ARRAY;
          }
 
-         return new PsiReference[] { new JteFileReference(element, psiFile) };
+         return new PsiReference[] { new KteFileReference(element, psiFile) };
       }
    }
 
@@ -91,9 +91,9 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
 
       List<String> paths = new ArrayList<>();
       if (module != null) {
-         paths.addAll(getJteDirPaths(module));
+         paths.addAll(getTemplateRootPaths(module));
       }
-      paths.addAll(getJteDirPaths(project));
+      paths.addAll(getTemplateRootPaths(project));
       paths.add(project.getBasePath());
       return paths;
    }
@@ -103,23 +103,23 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
       return ModuleUtilCore.findModuleForPsiElement(element);
    }
 
-   private static Collection<String> getJteDirPaths( @NotNull Project project ) {
-      return PROJECT_TO_JTE_DIRS_CACHE.computeIfAbsent(project, p -> {
+   private static Collection<String> getTemplateRootPaths( @NotNull Project project ) {
+      return PROJECT_TO_TEMPLATE_ROOTS_CACHE.computeIfAbsent(project, p -> {
          Collection<VirtualFile> roots = FilenameIndex.getVirtualFilesByName(".jteroot", GlobalSearchScope.projectScope(p));
          return roots.stream().map(f -> f.getParent().getPath()).toList();
       });
    }
 
-   private static Collection<String> getJteDirPaths( @NotNull Module module ) {
-      return MODULE_TO_JTE_DIRS_CACHE.computeIfAbsent(module, m -> {
+   private static Collection<String> getTemplateRootPaths( @NotNull Module module ) {
+      return MODULE_TO_TEMPLATE_ROOTS_CACHE.computeIfAbsent(module, m -> {
          Collection<VirtualFile> roots = FilenameIndex.getVirtualFilesByName(".jteroot", GlobalSearchScope.moduleScope(m));
          return roots.stream().map(f -> f.getParent().getPath()).toList();
       });
    }
 
-   public static class JteFileReference extends PsiReferenceBase.Immediate<PsiElement> {
+   public static class KteFileReference extends PsiReferenceBase.Immediate<PsiElement> {
 
-      public JteFileReference( @NotNull PsiElement element, PsiElement resolveTo ) {
+      public KteFileReference( @NotNull PsiElement element, PsiElement resolveTo ) {
          super(element, resolveTo);
       }
 
@@ -206,8 +206,8 @@ public class JteFileReferenceContributor extends PsiReferenceContributor {
          for ( VFileEvent event: events ){
             if(event instanceof VFileCreateEvent || event instanceof VFileDeleteEvent ){
                if(event.getFile() != null && event.getFile().getName().equals("jte")){
-                  PROJECT_TO_JTE_DIRS_CACHE.clear();
-                  MODULE_TO_JTE_DIRS_CACHE.clear();
+                  PROJECT_TO_TEMPLATE_ROOTS_CACHE.clear();
+                  MODULE_TO_TEMPLATE_ROOTS_CACHE.clear();
                }
             }
          }

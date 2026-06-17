@@ -11,7 +11,7 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jusecase.jte.intellij.language.parsing.KteTokenTypes;
 
-public class JteTypedActionHandler extends TypedHandlerDelegate {
+public class KteTypedActionHandler extends TypedHandlerDelegate {
 
     @Override
     public @NotNull Result charTyped(char charTyped, @NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file) {

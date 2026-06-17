@@ -57,15 +57,15 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
                                 implementationClass="org.jusecase.jte.intellij.language.k2.KteInjectedKotlinCompletionContributor"/>
 
         <defaultLiveTemplates file="liveTemplates/kte.xml"/>
-        <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.JteContext" contextId="kte"/>
-        <typedHandler implementation="org.jusecase.jte.intellij.language.completion.JteTypedActionHandler"/>
+        <liveTemplateContext implementation="org.jusecase.jte.intellij.language.completion.KteLiveTemplateContext" contextId="kte"/>
+        <typedHandler implementation="org.jusecase.jte.intellij.language.completion.KteTypedActionHandler"/>
 
         <completion.confidence
                 language="HTML"
                 order="first"
-                implementationClass="org.jusecase.jte.intellij.language.completion.JteHtmlCompletionConfidence"/>
+                implementationClass="org.jusecase.jte.intellij.language.completion.KteHtmlCompletionConfidence"/>
 
-        <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.JteAnnotator"/>
+        <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteStructuralAnnotator"/>
         <annotator language="KotlinTemplateEngine"
                    implementationClass="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinDiagnosticAnnotator"/>
         <intentionAction>
@@ -74,17 +74,17 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
             <language>KotlinTemplateEngine</language>
         </intentionAction>
 
-        <lang.commenter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.JteCommenter"/>
-        <useScopeEnlarger implementation="org.jusecase.jte.intellij.language.refactoring.JteUseScopeEnlarger"/>
+        <lang.commenter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteCommenter"/>
+        <useScopeEnlarger implementation="org.jusecase.jte.intellij.language.refactoring.KteUseScopeEnlarger"/>
 
         <lang.foldingBuilder language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteFoldingBuilder"/>
         <lang.braceMatcher language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteBraceMatcher"/>
-        <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.JteMoveFileHandler" id="KotlinTemplateEngine"/>
+        <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.KteMoveFileHandler" id="KotlinTemplateEngine"/>
 
-        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.JteFileReferenceContributor"/>
+        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteFileReferenceContributor"/>
         <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinReferenceContributor"
                                   language="KotlinTemplateEngine"/>
-        <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.JteTemplateParamReferencesSearcher"/>
+        <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.KteTemplateParamReferencesSearcher"/>
 
         <lang.formatter language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.format.KteFormattingModelBuilder"/>
         <codeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteCodeStyleSettingsProvider"/>
@@ -112,7 +112,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
     </actions>
 
     <applicationListeners>
-        <listener class="org.jusecase.jte.intellij.language.JteFileReferenceContributor$FileChangeListener"
+        <listener class="org.jusecase.jte.intellij.language.KteFileReferenceContributor$FileChangeListener"
                   topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
     </applicationListeners>
 </idea-plugin>

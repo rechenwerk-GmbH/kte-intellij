@@ -8,7 +8,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jusecase.jte.intellij.language.psi.*;
 
-public class JteAnnotator implements Annotator {
+public class KteStructuralAnnotator implements Annotator {
     @Override
     public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
         switch (element) {

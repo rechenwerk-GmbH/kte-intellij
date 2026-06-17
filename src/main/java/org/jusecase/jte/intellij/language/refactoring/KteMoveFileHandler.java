@@ -26,7 +26,7 @@ import org.jusecase.jte.intellij.language.psi.*;
 
 import java.util.*;
 
-public class JteMoveFileHandler extends MoveFileHandler {
+public class KteMoveFileHandler extends MoveFileHandler {
 
     @Override
     public boolean canProcessElement(PsiFile element) {
