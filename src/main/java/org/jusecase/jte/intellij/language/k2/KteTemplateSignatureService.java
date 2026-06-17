@@ -16,9 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class KteTemplateSignatureService {
-    private static final ThreadLocal<Boolean> SEMANTIC_METADATA_DISABLED =
-            ThreadLocal.withInitial(() -> false);
-
     private KteTemplateSignatureService() {
     }
 
@@ -30,7 +27,7 @@ public final class KteTemplateSignatureService {
         }
 
         return CachedValuesManager.getCachedValue(kteFile, () ->
-                CachedValueProvider.Result.create(resolveUncached(kteFile), PsiModificationTracker.MODIFICATION_COUNT)
+                CachedValueProvider.Result.create(resolveUncached(kteFile, true), PsiModificationTracker.MODIFICATION_COUNT)
         );
     }
 
@@ -45,22 +42,16 @@ public final class KteTemplateSignatureService {
             return TemplateSignature.EMPTY;
         }
 
-        boolean previous = SEMANTIC_METADATA_DISABLED.get();
-        SEMANTIC_METADATA_DISABLED.set(true);
-        try {
-            return resolveUncached(kteFile);
-        } finally {
-            SEMANTIC_METADATA_DISABLED.set(previous);
-        }
+        return resolveUncached(kteFile, false);
     }
 
     @NotNull
-    private static TemplateSignature resolveUncached(@NotNull PsiFile templateFile) {
+    private static TemplateSignature resolveUncached(@NotNull PsiFile templateFile, boolean includeSemanticMetadata) {
         KteTemplateSignatureSource.Signature sourceSignature = KteTemplateSignatureSource.resolve(templateFile);
         KteKotlinImportResolver importResolver = new KteKotlinImportResolver(templateFile);
         List<Parameter> parameters = new ArrayList<>();
         for (KteTemplateSignatureSource.Parameter sourceParameter : sourceSignature.parameters()) {
-            parameters.add(enrichParameter(sourceParameter, importResolver));
+            parameters.add(enrichParameter(sourceParameter, importResolver, includeSemanticMetadata));
         }
 
         return new TemplateSignature(templateFile, parameters);
@@ -68,14 +59,15 @@ public final class KteTemplateSignatureService {
 
     @NotNull
     private static Parameter enrichParameter(@NotNull KteTemplateSignatureSource.Parameter sourceParameter,
-                                             @NotNull KteKotlinImportResolver importResolver) {
+                                             @NotNull KteKotlinImportResolver importResolver,
+                                             boolean includeSemanticMetadata) {
         PsiClass typeClass = importResolver.resolveClass(sourceParameter.rawType());
         SemanticParameterType semanticParameterType = semanticParameterType(
                 sourceParameter.sourceElement(),
                 sourceParameter.typeText(),
                 sourceParameter.rawType(),
                 importResolver,
-                sourceParameter.typeRange()
+                includeSemanticMetadata
         );
 
         return new Parameter(
@@ -105,23 +97,14 @@ public final class KteTemplateSignatureService {
                                                               @NotNull String sourceTypeText,
                                                               @NotNull String rawType,
                                                               @NotNull KteKotlinImportResolver importResolver,
-                                                              @NotNull TextRange typeRange) {
-        if (SEMANTIC_METADATA_DISABLED.get() || ApplicationManager.getApplication().isWriteAccessAllowed()) {
+                                                              boolean includeSemanticMetadata) {
+        if (!includeSemanticMetadata || ApplicationManager.getApplication().isWriteAccessAllowed()) {
             return SemanticParameterType.EMPTY;
         }
 
-        KteSyntheticKotlinSemanticService semanticService =
-                KteSyntheticKotlinSemanticService.getInstance(sourceElement.getProject());
         PsiElement typeElement = importResolver.resolveClass(rawType);
-        if (typeElement == null) {
-            typeElement = semanticService.resolveReferenceAtTemplateOffset(
-                    sourceElement.getContainingFile(),
-                    typeRange.getStartOffset()
-            );
-        }
-
-        KteSyntheticKotlinSemanticService.SemanticType semanticType =
-                semanticService.declarationTypeAtTemplateRange(sourceElement.getContainingFile(), typeRange);
+        KteKotlinFragmentSemanticService.SemanticType semanticType =
+                KteKotlinFragmentSemanticService.typeOfTypeText(sourceElement, sourceTypeText);
         if (!isUsableSemanticType(sourceTypeText, typeElement, semanticType)) {
             semanticType = null;
         }
@@ -135,7 +118,7 @@ public final class KteTemplateSignatureService {
 
     private static boolean isUsableSemanticType(@NotNull String sourceTypeText,
                                                 @Nullable PsiElement typeElement,
-                                                @Nullable KteSyntheticKotlinSemanticService.SemanticType semanticType) {
+                                                @Nullable KteKotlinFragmentSemanticService.SemanticType semanticType) {
         if (semanticType == null) {
             return false;
         }

@@ -10,10 +10,17 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.analysis.api.AnalyzeKt;
+import org.jetbrains.kotlin.analysis.api.KaSession;
+import org.jetbrains.kotlin.analysis.api.renderer.types.impl.KaTypeRendererForSource;
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
+import org.jetbrains.kotlin.analysis.api.types.KaType;
 import org.jetbrains.kotlin.idea.references.KtReference;
+import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtNamedDeclaration;
+import org.jetbrains.kotlin.psi.KtProperty;
+import org.jetbrains.kotlin.types.Variance;
+import org.jusecase.jte.intellij.language.psi.JtePsiImport;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
@@ -30,6 +37,27 @@ final class KteKotlinFragmentSemanticService {
             Pattern.compile("\\b(?:val|var)\\s+([A-Za-z_][A-Za-z0-9_]*)");
 
     private KteKotlinFragmentSemanticService() {
+    }
+
+    @Nullable
+    static SemanticType typeOfTypeText(@NotNull PsiElement sourceElement, @NotNull String typeText) {
+        PsiFile templateFile = sourceElement.getContainingFile();
+        if (templateFile == null || typeText.isBlank()) {
+            return null;
+        }
+
+        String propertyName = "__kte_type_probe";
+        KtFile ktFile = createKtFile(
+                templateFile,
+                templateFile.getName() + ".type-fragment.kt",
+                importPrefix(templateFile) +
+                        "@Suppress(\"unused\")\n" +
+                        "val " + propertyName + " = null as " + typeText + "\n"
+        );
+
+        KtProperty property = property(ktFile, propertyName);
+        KtExpression initializer = property == null ? null : property.getInitializer();
+        return initializer == null ? null : expressionType(ktFile, initializer);
     }
 
     @Nullable
@@ -85,18 +113,36 @@ final class KteKotlinFragmentSemanticService {
     @NotNull
     private static KtFile createFragmentFile(@NotNull KteInjectedKotlinFragmentContext context,
                                              @NotNull String text) {
+        return createKtFile(context.host().getContainingFile(), context.host().getContainingFile().getName() + ".fragment.kt", text);
+    }
+
+    @NotNull
+    private static KtFile createKtFile(@NotNull PsiFile containingFile,
+                                       @NotNull String fileName,
+                                       @NotNull String text) {
         KteSyntheticKotlinAnalysisContextService contextService =
-                KteSyntheticKotlinAnalysisContextService.getInstance(context.host().getProject());
-        PsiFile containingFile = context.host().getContainingFile();
+                KteSyntheticKotlinAnalysisContextService.getInstance(containingFile.getProject());
         PsiElement analysisContext = contextService.findAnalysisContext(
                 containingFile,
                 contextService.findModuleSourceRoot(containingFile)
         );
         return KteSyntheticKotlinPsiFactory.createKtFile(
-                context.host().getProject(),
-                new KteSyntheticKotlinFile(containingFile.getName() + ".fragment.kt", text, List.of()),
+                containingFile.getProject(),
+                new KteSyntheticKotlinFile(fileName, text, List.of()),
                 analysisContext
         );
+    }
+
+    @NotNull
+    private static String importPrefix(@NotNull PsiFile templateFile) {
+        StringBuilder result = new StringBuilder();
+        for (JtePsiImport importElement : PsiTreeUtil.findChildrenOfType(templateFile, JtePsiImport.class)) {
+            JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(importElement, JtePsiJavaInjection.class);
+            if (injection != null && !injection.getText().isBlank()) {
+                result.append("import ").append(injection.getText().trim()).append('\n');
+            }
+        }
+        return result.toString();
     }
 
     @Nullable
@@ -138,6 +184,56 @@ final class KteKotlinFragmentSemanticService {
             }
             return null;
         }
+    }
+
+    @Nullable
+    private static KtProperty property(@NotNull KtFile ktFile, @NotNull String name) {
+        for (PsiElement child : ktFile.getChildren()) {
+            if (child instanceof KtProperty property && name.equals(property.getName())) {
+                return property;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static SemanticType expressionType(@NotNull KtFile ktFile, @NotNull KtExpression expression) {
+        try {
+            return AnalyzeKt.analyze(ktFile, session -> {
+                KaType type = session.getExpressionType(expression);
+                return type == null ? null : semanticType(session, type);
+            });
+        } catch (ProcessCanceledException exception) {
+            throw exception;
+        } catch (RuntimeException | LinkageError exception) {
+            if (ApplicationManager.getApplication().isUnitTestMode()) {
+                throw exception;
+            }
+            return null;
+        }
+    }
+
+    @NotNull
+    private static SemanticType semanticType(@NotNull KaSession session, @NotNull KaType type) {
+        return new SemanticType(renderShortType(session, type), renderQualifiedType(session, type));
+    }
+
+    @NotNull
+    private static String renderShortType(@NotNull KaSession session, @NotNull KaType type) {
+        return session.render(
+                type,
+                KaTypeRendererForSource.INSTANCE.getWITH_SHORT_NAMES(),
+                Variance.INVARIANT
+        );
+    }
+
+    @NotNull
+    private static String renderQualifiedType(@NotNull KaSession session, @NotNull KaType type) {
+        return session.render(
+                type,
+                KaTypeRendererForSource.INSTANCE.getWITH_QUALIFIED_NAMES(),
+                Variance.INVARIANT
+        );
     }
 
     @Nullable
@@ -258,5 +354,8 @@ final class KteKotlinFragmentSemanticService {
 
         String variableName = text.substring(0, inOffset).trim();
         return variableName.matches("[A-Za-z_][A-Za-z0-9_]*") ? variableName : null;
+    }
+
+    record SemanticType(@NotNull String typeText, @NotNull String qualifiedTypeText) {
     }
 }

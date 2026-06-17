@@ -13,20 +13,13 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.analysis.api.AnalyzeKt;
-import org.jetbrains.kotlin.analysis.api.KaSession;
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticKt;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticWithPsi;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity;
-import org.jetbrains.kotlin.analysis.api.renderer.types.impl.KaTypeRendererForSource;
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
-import org.jetbrains.kotlin.analysis.api.types.KaType;
 import org.jetbrains.kotlin.idea.references.KtReference;
-import org.jetbrains.kotlin.psi.KtDeclaration;
-import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtFile;
-import org.jetbrains.kotlin.psi.KtProperty;
-import org.jetbrains.kotlin.types.Variance;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,42 +81,6 @@ public final class KteSyntheticKotlinSemanticService {
     }
 
     @Nullable
-    public SemanticType expressionTypeAtTemplateRange(@NotNull PsiFile templateFile, @NotNull TextRange templateRange) {
-        KteSyntheticKotlinModel model = KteSyntheticKotlinModelService.getInstance(project).getModel(templateFile);
-        TextRange kotlinRange = model.getSyntheticFile().mapTemplateRangeToKotlin(templateRange);
-        if (kotlinRange == null) {
-            return null;
-        }
-
-        KtExpression expression = findExpressionForRange(model.getKtFile(), kotlinRange);
-        return expression == null ? null : expressionType(model, expression);
-    }
-
-    @Nullable
-    public SemanticType declarationTypeAtTemplateOffset(@NotNull PsiFile templateFile, int templateOffset) {
-        KteSyntheticKotlinModel model = KteSyntheticKotlinModelService.getInstance(project).getModel(templateFile);
-        Integer kotlinOffset = mapTemplateOffsetToKotlin(model, templateOffset);
-        if (kotlinOffset == null) {
-            return null;
-        }
-
-        KtDeclaration declaration = findDeclarationAtOffset(model.getKtFile(), kotlinOffset);
-        return declaration == null ? null : declarationType(model, declaration);
-    }
-
-    @Nullable
-    public SemanticType declarationTypeAtTemplateRange(@NotNull PsiFile templateFile, @NotNull TextRange templateRange) {
-        KteSyntheticKotlinModel model = KteSyntheticKotlinModelService.getInstance(project).getModel(templateFile);
-        TextRange kotlinRange = model.getSyntheticFile().mapTemplateRangeToKotlin(templateRange);
-        if (kotlinRange == null) {
-            return null;
-        }
-
-        KtDeclaration declaration = findDeclarationForRange(model.getKtFile(), kotlinRange);
-        return declaration == null ? null : declarationType(model, declaration);
-    }
-
-    @Nullable
     public Integer mapTemplateOffsetToKotlin(@NotNull KteSyntheticKotlinModel model, int templateOffset) {
         return model.getSyntheticFile().mapTemplateOffsetToKotlin(templateOffset);
     }
@@ -177,104 +134,6 @@ public final class KteSyntheticKotlinSemanticService {
             }
             return null;
         }
-    }
-
-    @Nullable
-    private KtExpression findExpressionForRange(@NotNull KtFile ktFile, @NotNull TextRange kotlinRange) {
-        PsiElement leaf = ktFile.findElementAt(kotlinRange.getStartOffset());
-        for (PsiElement current = leaf; current != null && current != ktFile; current = current.getParent()) {
-            if (current instanceof KtExpression expression && expression.getTextRange().contains(kotlinRange)) {
-                return expression;
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
-    private KtDeclaration findDeclarationAtOffset(@NotNull KtFile ktFile, int kotlinOffset) {
-        PsiElement leaf = ktFile.findElementAt(kotlinOffset);
-        return PsiTreeUtil.getParentOfType(leaf, KtDeclaration.class, false);
-    }
-
-    @Nullable
-    private KtDeclaration findDeclarationForRange(@NotNull KtFile ktFile, @NotNull TextRange kotlinRange) {
-        PsiElement leaf = ktFile.findElementAt(kotlinRange.getStartOffset());
-        for (PsiElement current = leaf; current != null && current != ktFile; current = current.getParent()) {
-            if (current instanceof KtDeclaration declaration && declaration.getTextRange().contains(kotlinRange)) {
-                return declaration;
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
-    private SemanticType expressionType(@NotNull KteSyntheticKotlinModel model, @NotNull KtExpression expression) {
-        try {
-            return AnalyzeKt.analyze(model.getKtFile(), session -> {
-                KaType type = session.getExpressionType(expression);
-                return type == null ? null : semanticType(session, type);
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
-        } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
-                throw exception;
-            }
-            return null;
-        }
-    }
-
-    @Nullable
-    private SemanticType declarationType(@NotNull KteSyntheticKotlinModel model, @NotNull KtDeclaration declaration) {
-        try {
-            return AnalyzeKt.analyze(model.getKtFile(), session -> {
-                KaType type = declarationType(session, declaration);
-                return type == null ? null : semanticType(session, type);
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
-        } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
-                throw exception;
-            }
-            return null;
-        }
-    }
-
-    @Nullable
-    private KaType declarationType(@NotNull KaSession session, @NotNull KtDeclaration declaration) {
-        if (declaration instanceof KtProperty property &&
-                property.getTypeReference() == null &&
-                property.getInitializer() != null) {
-            return session.getExpressionType(property.getInitializer());
-        }
-
-        return session.getReturnType(declaration);
-    }
-
-    @NotNull
-    private SemanticType semanticType(@NotNull KaSession session, @NotNull KaType type) {
-        return new SemanticType(renderShortType(session, type), renderQualifiedType(session, type));
-    }
-
-    @NotNull
-    private String renderShortType(@NotNull KaSession session, @NotNull KaType type) {
-        return session.render(
-                type,
-                KaTypeRendererForSource.INSTANCE.getWITH_SHORT_NAMES(),
-                Variance.INVARIANT
-        );
-    }
-
-    @NotNull
-    private String renderQualifiedType(@NotNull KaSession session, @NotNull KaType type) {
-        return session.render(
-                type,
-                KaTypeRendererForSource.INSTANCE.getWITH_QUALIFIED_NAMES(),
-                Variance.INVARIANT
-        );
     }
 
     @NotNull
@@ -406,8 +265,5 @@ public final class KteSyntheticKotlinSemanticService {
             case WARNING -> HighlightSeverity.WARNING;
             case INFO -> HighlightSeverity.INFORMATION;
         };
-    }
-
-    public record SemanticType(@NotNull String typeText, @NotNull String qualifiedTypeText) {
     }
 }
