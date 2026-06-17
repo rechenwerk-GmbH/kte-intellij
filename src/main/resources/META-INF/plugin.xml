@@ -82,7 +82,7 @@ Requires IntelliJ IDEA 2026.1 or newer. Completion uses scoped injected Kotlin f
         <moveFileHandler implementation="org.jusecase.jte.intellij.language.refactoring.KteMoveFileHandler" id="KotlinTemplateEngine"/>
 
         <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.KteFileReferenceContributor"/>
-        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.k2.KteSyntheticKotlinReferenceContributor"
+        <psi.referenceContributor implementation="org.jusecase.jte.intellij.language.k2.KteKotlinReferenceContributor"
                                   language="KotlinTemplateEngine"/>
         <referencesSearch implementation="org.jusecase.jte.intellij.language.refactoring.KteTemplateParamReferencesSearcher"/>
 

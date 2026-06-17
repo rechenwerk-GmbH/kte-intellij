@@ -8,7 +8,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,22 +16,15 @@ import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticKt;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticWithPsi;
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity;
-import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
-import org.jetbrains.kotlin.idea.references.KtReference;
-import org.jetbrains.kotlin.psi.KtFile;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
  * Facade for K2 Analysis API access and synthetic/template range mapping.
  */
 public final class KteSyntheticKotlinSemanticService {
-    private final Project project;
-
     public KteSyntheticKotlinSemanticService(@NotNull Project project) {
-        this.project = project;
     }
 
     @NotNull
@@ -51,111 +43,9 @@ public final class KteSyntheticKotlinSemanticService {
     }
 
     @Nullable
-    public PsiElement resolveReferenceAtTemplateRange(@NotNull PsiElement element, @NotNull TextRange rangeInElement) {
-        int offsetInElement = rangeInElement.getStartOffset() + rangeInElement.getLength() / 2;
-        int templateOffset = element.getTextRange().getStartOffset() + offsetInElement;
-        return resolveReferenceAtTemplateOffset(element.getContainingFile(), templateOffset);
-    }
-
-    @Nullable
-    public PsiElement resolveReferenceAtTemplateOffset(@NotNull PsiFile templateFile, int templateOffset) {
-        KteSyntheticKotlinModel model = KteSyntheticKotlinModelService.getInstance(project).getModel(templateFile);
-
-        Integer kotlinOffset = mapTemplateOffsetToKotlin(model, templateOffset);
-        if (kotlinOffset == null) {
-            return null;
-        }
-
-        PsiReference syntheticReference = findSyntheticReference(model.getKtFile(), kotlinOffset);
-        if (syntheticReference == null) {
-            return null;
-        }
-
-        PsiElement analysisTarget = resolveReferenceWithAnalysisApi(model, templateFile, syntheticReference);
-        if (analysisTarget != null) {
-            return analysisTarget;
-        }
-
-        PsiElement target = syntheticReference.resolve();
-        return target == null ? null : mapSyntheticTargetBackToTemplate(model, templateFile, target);
-    }
-
-    @Nullable
-    public Integer mapTemplateOffsetToKotlin(@NotNull KteSyntheticKotlinModel model, int templateOffset) {
-        return model.getSyntheticFile().mapTemplateOffsetToKotlin(templateOffset);
-    }
-
-    @Nullable
-    public TextRange mapKotlinErrorRangeToTemplate(@NotNull KteSyntheticKotlinModel model,
-                                                   @NotNull TextRange kotlinRange) {
+    private TextRange mapKotlinErrorRangeToTemplate(@NotNull KteSyntheticKotlinModel model,
+                                                    @NotNull TextRange kotlinRange) {
         return model.getSyntheticFile().mapKotlinErrorRangeToTemplate(kotlinRange);
-    }
-
-    @Nullable
-    private static PsiReference findSyntheticReference(@NotNull KtFile ktFile, int kotlinOffset) {
-        PsiElement leaf = ktFile.findElementAt(kotlinOffset);
-        for (PsiElement current = leaf; current != null && current != ktFile; current = current.getParent()) {
-            for (PsiReference reference : current.getReferences()) {
-                TextRange referenceRange = reference.getRangeInElement().shiftRight(current.getTextRange().getStartOffset());
-                if (referenceRange.contains(kotlinOffset)) {
-                    return reference;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
-    private PsiElement resolveReferenceWithAnalysisApi(@NotNull KteSyntheticKotlinModel model,
-                                                       @NotNull PsiFile templateFile,
-                                                       @NotNull PsiReference syntheticReference) {
-        if (!(syntheticReference instanceof KtReference ktReference)) {
-            return null;
-        }
-
-        try {
-            return AnalyzeKt.analyze(model.getKtFile(), session -> {
-                Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
-                for (KaSymbol symbol : symbols) {
-                    PsiElement target = symbol.getPsi();
-                    if (target != null) {
-                        return mapSyntheticTargetBackToTemplate(model, templateFile, target);
-                    }
-                }
-
-                return null;
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
-        } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
-                throw exception;
-            }
-            return null;
-        }
-    }
-
-    @NotNull
-    public PsiElement mapSyntheticTargetBackToTemplate(@NotNull KteSyntheticKotlinModel model,
-                                                       @NotNull PsiFile templateFile,
-                                                       @NotNull PsiElement target) {
-        if (target.getContainingFile() != model.getKtFile()) {
-            return target;
-        }
-
-        TextRange targetRange = target.getTextRange();
-        if (targetRange == null) {
-            return target;
-        }
-
-        Integer templateOffset = model.getSyntheticFile().mapKotlinOffsetToTemplate(targetRange.getStartOffset());
-        if (templateOffset == null) {
-            return target;
-        }
-
-        PsiElement templateTarget = templateFile.findElementAt(templateOffset);
-        return templateTarget == null ? target : templateTarget;
     }
 
     private void collectMappedSyntaxErrors(

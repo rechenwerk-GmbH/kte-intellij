@@ -106,6 +106,36 @@ final class KteKotlinImportResolver {
     }
 
     @Nullable
+    PsiElement resolveImportedReference(@NotNull String importText, @NotNull String identifierText) {
+        ImportInfo importInfo = parseImport(importText);
+        if (importInfo.star() || !importInfo.visibleName().equals(identifierText)) {
+            return null;
+        }
+
+        return resolveImport(importInfo);
+    }
+
+    @Nullable
+    PsiElement resolveImportedVisibleName(@NotNull String visibleName) {
+        for (ImportInfo importInfo : imports()) {
+            if (!importInfo.star() && importInfo.visibleName().equals(visibleName)) {
+                return resolveImport(importInfo);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private PsiElement resolveImport(@NotNull ImportInfo importInfo) {
+        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(importInfo.qualifiedName(), scope);
+        if (psiClass != null) {
+            return navigationElement(psiClass);
+        }
+
+        return navigationElement(resolveKotlinQualifiedDeclaration(importInfo.qualifiedName()));
+    }
+
+    @Nullable
     PsiElement navigationElement(@Nullable PsiElement element) {
         if (element == null) {
             return null;
@@ -138,6 +168,61 @@ final class KteKotlinImportResolver {
         }
 
         return result;
+    }
+
+    @Nullable
+    private PsiElement resolveKotlinQualifiedDeclaration(@NotNull String qualifiedName) {
+        PsiManager psiManager = PsiManager.getInstance(project);
+        for (VirtualFile virtualFile : FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)) {
+            PsiFile psiFile = psiManager.findFile(virtualFile);
+            if (!(psiFile instanceof KtFile ktFile)) {
+                continue;
+            }
+
+            String declarationPath = declarationPath(ktFile, qualifiedName);
+            if (declarationPath == null) {
+                continue;
+            }
+
+            PsiElement declaration = resolveDeclarationPath(ktFile.getDeclarations(), declarationPath);
+            if (declaration != null) {
+                return declaration;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private String declarationPath(@NotNull KtFile ktFile, @NotNull String qualifiedName) {
+        String packageName = packageName(ktFile);
+        if (packageName.isEmpty()) {
+            return qualifiedName.contains(".") ? null : qualifiedName;
+        }
+
+        String prefix = packageName + ".";
+        return qualifiedName.startsWith(prefix) ? qualifiedName.substring(prefix.length()) : null;
+    }
+
+    @Nullable
+    private PsiElement resolveDeclarationPath(@NotNull List<KtDeclaration> declarations,
+                                              @NotNull String declarationPath) {
+        int dotOffset = declarationPath.indexOf('.');
+        String segment = dotOffset == -1 ? declarationPath : declarationPath.substring(0, dotOffset);
+        String remainingPath = dotOffset == -1 ? null : declarationPath.substring(dotOffset + 1);
+        for (KtDeclaration declaration : declarations) {
+            if (!(declaration instanceof KtNamedDeclaration namedDeclaration) ||
+                    !segment.equals(namedDeclaration.getName())) {
+                continue;
+            }
+
+            if (remainingPath == null) {
+                return declaration;
+            }
+            if (declaration instanceof KtClassOrObject classOrObject) {
+                return resolveDeclarationPath(classOrObject.getDeclarations(), remainingPath);
+            }
+        }
+        return null;
     }
 
     private void addJavaClassImportCandidates(@NotNull Map<String, ImportCandidate> result, @NotNull String candidateName) {

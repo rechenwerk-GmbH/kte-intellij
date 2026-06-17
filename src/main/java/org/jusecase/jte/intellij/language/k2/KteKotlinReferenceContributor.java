@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 
-public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContributor {
+public class KteKotlinReferenceContributor extends PsiReferenceContributor {
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Set<String> KEYWORDS = Set.of(
             "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface",
@@ -49,10 +49,10 @@ public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContribu
 
     @Override
     public void registerReferenceProviders(@NotNull PsiReferenceRegistrar registrar) {
-        registrar.registerReferenceProvider(psiElement(JtePsiJavaInjection.class), new SyntheticKotlinReferenceProvider());
+        registrar.registerReferenceProvider(psiElement(JtePsiJavaInjection.class), new KotlinReferenceProvider());
     }
 
-    private static final class SyntheticKotlinReferenceProvider extends PsiReferenceProvider {
+    private static final class KotlinReferenceProvider extends PsiReferenceProvider {
         private static final List<Class<? extends PsiElement>> SUPPORTED_KOTLIN_FRAGMENT_PARENTS = List.of(
                 JtePsiOutput.class,
                 JtePsiIf.class,
@@ -74,7 +74,7 @@ public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContribu
             while (matcher.find()) {
                 String identifier = matcher.group();
                 if (!KEYWORDS.contains(identifier)) {
-                    result.add(new SyntheticKotlinReference(injection, new TextRange(matcher.start(), matcher.end())));
+                    result.add(new KotlinReference(injection, new TextRange(matcher.start(), matcher.end())));
                 }
             }
 
@@ -103,8 +103,8 @@ public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContribu
         }
     }
 
-    private static final class SyntheticKotlinReference extends PsiReferenceBase<JtePsiJavaInjection> {
-        private SyntheticKotlinReference(@NotNull JtePsiJavaInjection element, @NotNull TextRange rangeInElement) {
+    private static final class KotlinReference extends PsiReferenceBase<JtePsiJavaInjection> {
+        private KotlinReference(@NotNull JtePsiJavaInjection element, @NotNull TextRange rangeInElement) {
             super(element, rangeInElement, false);
         }
 
@@ -115,15 +115,49 @@ public class KteSyntheticKotlinReferenceContributor extends PsiReferenceContribu
 
         @Override
         public @Nullable PsiElement resolve() {
-            PsiFile templateFile = myElement.getContainingFile();
-            PsiElement fragmentTarget =
-                    KteKotlinFragmentSemanticService.resolveReferenceAtTemplateRange(myElement, getRangeInElement());
-            if (fragmentTarget != null) {
-                return fragmentTarget;
+            PsiElement directiveTarget = resolveDirectiveReference();
+            if (directiveTarget != null) {
+                return directiveTarget;
             }
 
-            return KteSyntheticKotlinSemanticService.getInstance(templateFile.getProject())
-                    .resolveReferenceAtTemplateRange(myElement, getRangeInElement());
+            return KteKotlinFragmentSemanticService.resolveReferenceAtTemplateRange(myElement, getRangeInElement());
+        }
+
+        @Nullable
+        private PsiElement resolveDirectiveReference() {
+            KteKotlinImportResolver importResolver = new KteKotlinImportResolver(myElement.getContainingFile());
+            if (PsiTreeUtil.getParentOfType(myElement, JtePsiImport.class, false) != null) {
+                return importResolver.resolveImportedReference(myElement.getText().trim(), identifierText());
+            }
+            if (PsiTreeUtil.getParentOfType(myElement, JtePsiParam.class, false) != null) {
+                int colonOffset = myElement.getText().indexOf(':');
+                if (colonOffset == -1 || getRangeInElement().getStartOffset() <= colonOffset) {
+                    return null;
+                }
+
+                PsiClass psiClass = importResolver.resolveClass(typeReferenceText());
+                return importResolver.navigationElement(psiClass);
+            }
+
+            return null;
+        }
+
+        @NotNull
+        private String typeReferenceText() {
+            String text = myElement.getText();
+            int startOffset = getRangeInElement().getStartOffset();
+            int endOffset = getRangeInElement().getEndOffset();
+            while (startOffset > 0 && isTypeReferencePart(text.charAt(startOffset - 1))) {
+                startOffset--;
+            }
+            while (endOffset < text.length() && isTypeReferencePart(text.charAt(endOffset))) {
+                endOffset++;
+            }
+            return text.substring(startOffset, endOffset);
+        }
+
+        private boolean isTypeReferencePart(char c) {
+            return c == '.' || Character.isJavaIdentifierPart(c);
         }
 
         @NotNull

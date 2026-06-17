@@ -25,6 +25,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiFor;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 import org.jusecase.jte.intellij.language.psi.JtePsiStatement;
+import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 
 import java.util.Collection;
@@ -75,11 +76,14 @@ final class KteKotlinFragmentSemanticService {
 
         String prefix = context.prefix(place);
         String suffix = context.suffix(place);
-        String fragmentText = prefix + injection.getText() + suffix;
+        String injectionPrefix = referenceInjectionPrefix(injection);
+        String injectionSuffix = referenceInjectionSuffix(injection);
+        String fragmentText = prefix + injectionPrefix + injection.getText() + injectionSuffix + suffix;
         KtFile ktFile = createFragmentFile(context, fragmentText);
 
         int offsetInElement = rangeInElement.getStartOffset() + rangeInElement.getLength() / 2;
-        int kotlinOffset = Math.clamp(prefix.length() + offsetInElement, 0, Math.max(0, fragmentText.length() - 1));
+        int injectionStartInFragment = prefix.length() + injectionPrefix.length();
+        int kotlinOffset = Math.clamp(injectionStartInFragment + offsetInElement, 0, Math.max(0, fragmentText.length() - 1));
         PsiReference reference = findReference(ktFile, kotlinOffset);
         if (reference == null) {
             return null;
@@ -90,7 +94,17 @@ final class KteKotlinFragmentSemanticService {
             return null;
         }
 
-        return mapTargetBackToTemplate(context, place, ktFile, target, prefix.length());
+        return mapTargetBackToTemplate(context, place, ktFile, target, injectionStartInFragment);
+    }
+
+    @NotNull
+    private static String referenceInjectionPrefix(@NotNull JtePsiJavaInjection injection) {
+        return PsiTreeUtil.getParentOfType(injection, JtePsiTemplate.class, false) == null ? "" : "dummyCall(";
+    }
+
+    @NotNull
+    private static String referenceInjectionSuffix(@NotNull JtePsiJavaInjection injection) {
+        return PsiTreeUtil.getParentOfType(injection, JtePsiTemplate.class, false) == null ? "" : ")";
     }
 
     @Nullable
@@ -274,6 +288,11 @@ final class KteKotlinFragmentSemanticService {
             return local;
         }
 
+        PsiElement imported = importedSourceElement(context, name);
+        if (imported != null) {
+            return imported;
+        }
+
         return null;
     }
 
@@ -295,6 +314,12 @@ final class KteKotlinFragmentSemanticService {
 
         JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(parameter.sourceElement(), JtePsiJavaInjection.class);
         return injection == null ? parameter.sourceElement() : injection;
+    }
+
+    @Nullable
+    private static PsiElement importedSourceElement(@NotNull KteInjectedKotlinFragmentContext context,
+                                                   @NotNull String name) {
+        return new KteKotlinImportResolver(context.host().getContainingFile()).resolveImportedVisibleName(name);
     }
 
     @Nullable
