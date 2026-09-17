@@ -7,7 +7,7 @@ import org.jusecase.jte.intellij.language.KteIcons;
 public class CreateKteFileAction extends CreateFileAction {
 
     public CreateKteFileAction() {
-        super(() -> "KTE Template", () -> "Create KTE Template", () -> KteIcons.ICON);
+        super(() -> "KTE Template", () -> "Create KTE Template", () -> KteIcons.FILE);
     }
 
     @Override
