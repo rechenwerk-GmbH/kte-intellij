@@ -35,6 +35,6 @@ public class KteFileType extends LanguageFileType {
     @Nullable
     @Override
     public Icon getIcon() {
-        return KteIcons.ICON;
+        return KteIcons.FILE;
     }
 }
