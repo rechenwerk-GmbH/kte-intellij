@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KaDanglingFileModuleImpl;
-import org.jetbrains.kotlin.analysis.api.projectStructure.ContextModuleKt;
 import org.jetbrains.kotlin.analysis.api.projectStructure.DanglingFilesKt;
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaDanglingFileResolutionMode;
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule;
@@ -36,9 +35,6 @@ final class KteKotlinModuleContext {
         }
 
         KaModule contextModule = contextModule(project, analysisContext);
-        if (ktFile.getVirtualFile() != null) {
-            ContextModuleKt.setAnalysisContextModule(ktFile.getVirtualFile(), contextModule);
-        }
         KtPsiFactoryKt.setAnalysisContext(ktFile, analysisContext);
         if (ktFile instanceof KtCodeFragment codeFragment) {
             DanglingFilesKt.setRefinedContextModule(codeFragment, contextModule);

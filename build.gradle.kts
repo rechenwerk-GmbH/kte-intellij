@@ -3,7 +3,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 val intellijBaselineVersion = "2026.1.1"
 val intellijSinceBuild = "261"
-val intellijVerificationVersions = listOf("2026.1.1")
+val intellijVerificationVersions = listOf("2026.1.1", "2026.2.4", "263.7307.112")
 
 plugins {
     id("java")
@@ -47,7 +47,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.rechenwerk.kte"
         name = "KTE"
-        version = "0.2.0"
+        version = "0.2.1"
     }
     projectName = "kte-intellij"
     publishing {
