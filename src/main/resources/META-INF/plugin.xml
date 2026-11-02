@@ -9,8 +9,9 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 <h3>Features</h3>
 <ul>
     <li><code>.kte</code> file type support.</li>
-    <li>Kotlin K2 completion, resolve, references, documentation, and unresolved-reference highlighting.</li>
-    <li>Template navigation, parameter checks, formatting, folding, brace matching, and live templates.</li>
+    <li>Kotlin K2 completion, resolve, references, and documentation.</li>
+    <li>Highlights unresolved Kotlin references and checks template structure and parameters.</li>
+    <li>Template navigation, formatting, folding, brace matching, and live templates.</li>
 </ul>
 
 <p>
@@ -26,7 +27,7 @@ Requires IntelliJ IDEA 2026.1 or newer.
 </ul>
 <h3>0.2.0</h3>
 <ul>
-    <li>Improves Kotlin K2 completion, resolve, references, documentation, diagnostics, and template-signature analysis.</li>
+    <li>Improves Kotlin K2 completion, resolve, references, documentation, and template-signature diagnostics.</li>
     <li>Replaces the synthetic Kotlin model with scoped injected Kotlin fragments.</li>
     <li>Adds new KTE branding and a dedicated <code>.kte</code> file icon.</li>
     <li>Updates compatibility with IntelliJ IDEA 2026.1 APIs.</li>
