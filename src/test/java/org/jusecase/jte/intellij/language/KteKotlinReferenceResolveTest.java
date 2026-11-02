@@ -4,10 +4,65 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import org.jetbrains.kotlin.psi.KtClass;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
+import org.jetbrains.kotlin.psi.KtTypeAlias;
 
 import java.util.Set;
 
 public class KteKotlinReferenceResolveTest extends KtePluginFixtureSupport {
+    public void testParamKotlinStringTypeReferenceNavigatesToStringDeclaration() {
+        myFixture.configureByText("avatar.kte", """
+                @param src: Str<caret>ing?
+                ${src}
+                """);
+
+        PsiElement resolved = resolveReferenceAtCaret();
+
+        assertTrue(resolved instanceof PsiNamedElement);
+        assertEquals("String", ((PsiNamedElement) resolved).getName());
+        assertNotSame(myFixture.getFile(), resolved.getContainingFile());
+    }
+
+    public void testParamTypeReferenceResolvesProjectKotlinClassFromSourceRoot() {
+        myFixture.addFileToProject("src/main/kotlin/dev/joyam/jblog/posts/presentation/PostView.kt", """
+                package dev.joyam.jblog.posts.presentation
+
+                data class PostView(val title: String)
+                """);
+
+        PsiElement template = myFixture.addFileToProject("src/main/jte/item.kte", """
+                @import dev.joyam.jblog.posts.presentation.PostView
+                @param post: PostView
+                ${post.title}
+                """);
+        myFixture.configureFromExistingVirtualFile(template.getContainingFile().getVirtualFile());
+        myFixture.getEditor().getCaretModel().moveToOffset(myFixture.getFile().getText().lastIndexOf("PostView") + 4);
+
+        PsiElement resolved = resolveReferenceAtCaret();
+
+        assertTrue(resolved instanceof KtClass);
+        assertEquals("PostView", ((KtClass) resolved).getName());
+    }
+
+    public void testParamTypeReferenceResolvesImportedKotlinTypeAlias() {
+        myFixture.addFileToProject("src/com/example/Models.kt", """
+                package com.example
+
+                data class PostView(val title: String)
+                typealias BlogPost = PostView
+                """);
+
+        myFixture.configureByText("item.kte", """
+                @import com.example.BlogPost
+                @param post: Blog<caret>Post
+                ${post.title}
+                """);
+
+        PsiElement resolved = resolveReferenceAtCaret();
+
+        assertTrue(resolved instanceof KtTypeAlias);
+        assertEquals("BlogPost", ((KtTypeAlias) resolved).getName());
+    }
+
     public void testParamTypeReferenceResolvesToImportedKotlinClass() {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example

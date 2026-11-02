@@ -24,6 +24,7 @@ Requires IntelliJ IDEA 2026.1 or newer.
 <ul>
     <li>Restores compatibility with IntelliJ IDEA 2026.3 by removing a Kotlin API call that is unavailable in build 263.</li>
     <li>Highlights unresolved Kotlin references in template expressions, conditions, loops, statements, and template arguments.</li>
+    <li>Enables navigation and Quick Documentation for Kotlin types in <code>@param</code> declarations.</li>
 </ul>
 <h3>0.2.0</h3>
 <ul>

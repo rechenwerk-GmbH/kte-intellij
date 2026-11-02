@@ -8,6 +8,30 @@ import com.intellij.platform.backend.documentation.PsiDocumentationTargetProvide
 import com.intellij.psi.PsiElement;
 
 public class KteKotlinDocumentationProviderTest extends KtePluginFixtureSupport {
+    public void testKotlinStringParamTypeUsesPlatformDocumentation() {
+        myFixture.configureByText("avatar.kte", """
+                @param src: Str<caret>ing?
+                ${src}
+                """);
+
+        String info = platformDocumentationHintAtCaret();
+
+        assertNotNull(info);
+        assertTrue(info, plainDocumentationText(info).contains("String"));
+    }
+
+    public void testKotlinListParamTypeUsesPlatformDocumentation() {
+        myFixture.configureByText("items.kte", """
+                @param items: Li<caret>st<String>
+                ${items}
+                """);
+
+        String info = platformDocumentationHintAtCaret();
+
+        assertNotNull(info);
+        assertTrue(info, plainDocumentationText(info).contains("List"));
+    }
+
     public void testQuickNavigateInfoForTemplateParamShowsDeclarationType() {
         addProfileClass();
 
