@@ -35,7 +35,8 @@ public final class KteKotlinFragmentInjector implements MultiHostInjector {
             if (contextModuleKey != null) {
                 kotlinRegistrar.putInjectedFileUserData(contextModuleKey, injectionContext.contextModule());
             }
-            kotlinRegistrar.addPlace(injectionContext.prefix(place), injectionContext.suffix(place), host, place.range());
+            KteKotlinFragmentProjection projection = KteKotlinFragmentProjection.forCompletion(injectionContext, place);
+            kotlinRegistrar.addPlace(projection.prefix(), projection.suffix(), host, place.range());
             kotlinRegistrar.doneInjecting();
         }
     }

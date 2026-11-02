@@ -9,12 +9,13 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 <h3>Features</h3>
 <ul>
     <li><code>.kte</code> file type support.</li>
-    <li>Kotlin K2 completion, resolve, references, documentation, and injected-fragment diagnostics.</li>
-    <li>Template navigation, parameter checks, formatting, folding, brace matching, and live templates.</li>
+    <li>Kotlin K2 completion, resolve, references, and documentation.</li>
+    <li>Highlights unresolved Kotlin references and checks template structure and parameters.</li>
+    <li>Template navigation, formatting, folding, brace matching, and live templates.</li>
 </ul>
 
 <p>
-Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped injected fragments.
+Requires IntelliJ IDEA 2026.1 or newer.
 </p>
     ]]></description>
 
@@ -22,10 +23,11 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
 <h3>0.2.1</h3>
 <ul>
     <li>Restores compatibility with IntelliJ IDEA 2026.3 by removing a Kotlin API call that is unavailable in build 263.</li>
+    <li>Highlights unresolved Kotlin references in template expressions, conditions, loops, statements, and template arguments.</li>
 </ul>
 <h3>0.2.0</h3>
 <ul>
-    <li>Improves Kotlin K2 completion, resolve, references, documentation, diagnostics, and template-signature analysis.</li>
+    <li>Improves Kotlin K2 completion, resolve, references, documentation, and template-signature diagnostics.</li>
     <li>Replaces the synthetic Kotlin model with scoped injected Kotlin fragments.</li>
     <li>Adds new KTE branding and a dedicated <code>.kte</code> file icon.</li>
     <li>Updates compatibility with IntelliJ IDEA 2026.1 APIs.</li>
@@ -79,6 +81,8 @@ Requires IntelliJ IDEA 2026.1 or newer. Kotlin semantics are backed by scoped in
         <annotator language="KotlinTemplateEngine" implementationClass="org.jusecase.jte.intellij.language.KteStructuralAnnotator"/>
         <annotator language="KotlinTemplateEngine"
                    implementationClass="org.jusecase.jte.intellij.language.KteTemplateDiagnosticAnnotator"/>
+        <annotator language="KotlinTemplateEngine"
+                   implementationClass="org.jusecase.jte.intellij.language.kotlin.KteKotlinDiagnosticAnnotator"/>
         <intentionAction>
             <className>org.jusecase.jte.intellij.language.refactoring.KteOptimizeImportsIntention</className>
             <category>KTE</category>

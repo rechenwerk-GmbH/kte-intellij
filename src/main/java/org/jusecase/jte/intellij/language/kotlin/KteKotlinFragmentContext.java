@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;
@@ -24,6 +25,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +35,11 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
                                         @NotNull KaModule contextModule,
                                         @NotNull KtePsiJavaContent host,
                                         @NotNull List<KteKotlinFragmentPlace> places) {
+    KteKotlinFragmentContext {
+        parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
+        places = List.copyOf(places);
+    }
+
     private static final Pattern KOTLIN_PARAMETER =
             Pattern.compile("^\\s*(?:vararg\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*([^=]+?)(?:\\s*=.*)?$");
     private static final Pattern TYPE_REFERENCE = Pattern.compile("[A-Za-z_][A-Za-z0-9_.]*");
@@ -56,6 +64,16 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
 
     @NotNull
     String prefix(@NotNull KteKotlinFragmentPlace place) {
+        return scaffolding(place).prefix();
+    }
+
+    @NotNull
+    String suffix(@NotNull KteKotlinFragmentPlace place) {
+        return scaffolding(place).suffix();
+    }
+
+    @NotNull
+    Scaffolding scaffolding(@NotNull KteKotlinFragmentPlace place) {
         StringBuilder result = new StringBuilder();
         result.append(importPrefix)
                 .append("@Suppress(\"unused\", \"UNUSED_PARAMETER\")\n")
@@ -64,18 +82,26 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
         int loopDepth = appendEnclosingLoops(result, place.injection());
         appendPreviousStatements(result, place.injection());
         result.append(place.prefix());
-        place.setLoopDepth(loopDepth);
-        return result.toString();
+
+        StringBuilder suffix = new StringBuilder(place.suffix());
+        for (int i = 0; i < loopDepth; i++) {
+            suffix.append("}\n");
+        }
+        suffix.append("}\n");
+        return new Scaffolding(result.toString(), suffix.toString());
     }
 
-    @NotNull
-    String suffix(@NotNull KteKotlinFragmentPlace place) {
-        StringBuilder result = new StringBuilder(place.suffix());
-        for (int i = 0; i < place.loopDepth(); i++) {
-            result.append("}\n");
+    @Nullable
+    KteKotlinFragmentPlace placeFor(@NotNull JtePsiJavaInjection injection) {
+        for (KteKotlinFragmentPlace place : places) {
+            if (place.injection() == injection || place.injection().getTextRange().equals(injection.getTextRange())) {
+                return place;
+            }
         }
-        result.append("}\n");
-        return result.toString();
+        return null;
+    }
+
+    record Scaffolding(@NotNull String prefix, @NotNull String suffix) {
     }
 
     @NotNull
@@ -99,9 +125,11 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
     @NotNull
     private static String importPrefix(@NotNull KtePsiJavaContent host) {
         StringBuilder result = new StringBuilder();
+        Set<String> declaredNames = new HashSet<>();
         KteKotlinImportResolver importResolver = new KteKotlinImportResolver(host.getContainingFile());
         for (KteKotlinImportResolver.ImportInfo importInfo : importResolver.imports()) {
-            if (importInfo.star() || !IDENTIFIER.matcher(importInfo.visibleName()).matches()) {
+            if (importInfo.star() || !IDENTIFIER.matcher(importInfo.visibleName()).matches() ||
+                    !declaredNames.add(importInfo.visibleName())) {
                 continue;
             }
 

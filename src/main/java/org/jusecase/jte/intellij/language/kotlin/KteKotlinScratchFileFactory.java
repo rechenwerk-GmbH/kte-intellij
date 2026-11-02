@@ -22,6 +22,19 @@ public final class KteKotlinScratchFileFactory {
     }
 
     @NotNull
+    static KtFile createKtFile(@NotNull PsiFile templateFile,
+                               @NotNull String fileName,
+                               @NotNull String text) {
+        KteKotlinAnalysisContextService contextService =
+                KteKotlinAnalysisContextService.getInstance(templateFile.getProject());
+        PsiElement analysisContext = contextService.findAnalysisContext(
+                templateFile,
+                contextService.findModuleSourceRoot(templateFile)
+        );
+        return createKtFile(templateFile.getProject(), fileName, text, analysisContext);
+    }
+
+    @NotNull
     public static KtFile createKtFile(@NotNull Project project,
                                       @NotNull String fileName,
                                       @NotNull String text,
