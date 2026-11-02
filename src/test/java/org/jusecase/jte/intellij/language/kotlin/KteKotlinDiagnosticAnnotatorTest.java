@@ -12,12 +12,17 @@ import java.util.Locale;
 public class KteKotlinDiagnosticAnnotatorTest extends KtePluginFixtureSupport {
     public void testMissingAvatarParametersAreHighlightedAndClearWhenRestored() {
         String declarations = """
-                @param src: String
-                @param alt: String
-                @param size: Int
+                @param src: String?
+                @param alt: String = "Photo de profil"
+                @param size: String = "size-8"
                 """;
         String body = """
-                <img src="${src}" alt="${alt}" width="${size}">
+                <img
+                    src="${ src ?: "/images/default-avatar.png" }"
+                    alt="${ alt }"
+                    class="${ size } rounded-xl object-cover"
+                    loading="lazy"
+                >
                 """;
         myFixture.configureByText("avatar.kte", declarations + body);
         assertTrue(unresolved().toString(), unresolved().isEmpty());
@@ -25,9 +30,9 @@ public class KteKotlinDiagnosticAnnotatorTest extends KtePluginFixtureSupport {
         replaceText(body);
         List<HighlightInfo> missing = unresolved();
         assertEquals(missing.toString(), 3, missing.size());
-        assertUnresolvedRange(missing, body, "src");
-        assertUnresolvedRange(missing, body, "alt");
-        assertUnresolvedRange(missing, body, "size");
+        assertUnresolvedRangeAt(missing, body.indexOf("src ?:"), "src");
+        assertUnresolvedRangeAt(missing, body.indexOf("alt }"), "alt");
+        assertUnresolvedRangeAt(missing, body.indexOf("size }"), "size");
 
         replaceText(declarations + body);
         assertTrue(unresolved().toString(), unresolved().isEmpty());
@@ -91,8 +96,11 @@ public class KteKotlinDiagnosticAnnotatorTest extends KtePluginFixtureSupport {
     private void assertUnresolvedRange(List<HighlightInfo> errors, String text, String name) {
         int start = text.indexOf("${" + name + "}");
         start = start >= 0 ? start + 2 : text.indexOf(name);
-        assertTrue("Expected " + name + " in fixture", start >= 0);
-        int expectedStart = start;
+        assertUnresolvedRangeAt(errors, start, name);
+    }
+
+    private void assertUnresolvedRangeAt(List<HighlightInfo> errors, int expectedStart, String name) {
+        assertTrue("Expected " + name + " in fixture", expectedStart >= 0);
         assertTrue("Expected unresolved " + name + " at " + expectedStart + " in " + errors,
                 errors.stream().anyMatch(info -> info.getStartOffset() == expectedStart &&
                         info.getEndOffset() == expectedStart + name.length()));
