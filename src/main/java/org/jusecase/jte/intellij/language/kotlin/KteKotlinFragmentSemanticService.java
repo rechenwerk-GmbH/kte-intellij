@@ -96,6 +96,30 @@ public final class KteKotlinFragmentSemanticService {
     }
 
     @Nullable
+    public static PsiElement resolveParameterReferenceAtTemplateRange(@NotNull JtePsiJavaInjection injection,
+                                                                      @NotNull TextRange rangeInElement) {
+        PsiFile templateFile = injection.getContainingFile();
+        String prefix = importPrefix(templateFile) + "fun __kte_parameter_probe(";
+        String suffix = ") {}\n";
+        KtFile ktFile = KteKotlinScratchFileFactory.createKtFile(
+                templateFile,
+                templateFile.getName() + ".parameter-fragment.kt",
+                prefix + injection.getText() + suffix
+        );
+        int kotlinOffset = prefix.length() + rangeInElement.getStartOffset() + rangeInElement.getLength() / 2;
+        PsiReference reference = findReference(ktFile, kotlinOffset);
+        if (reference == null) {
+            return null;
+        }
+
+        PsiElement target = resolveReference(ktFile, reference);
+        if (target == null || target.getContainingFile() == ktFile) {
+            return null;
+        }
+        return target.getNavigationElement();
+    }
+
+    @Nullable
     private static KteKotlinFragmentContext context(@NotNull JtePsiJavaInjection injection) {
         KtePsiJavaContent host = PsiTreeUtil.getParentOfType(injection, KtePsiJavaContent.class, false);
         return host == null ? null : KteKotlinFragmentContext.from(host);

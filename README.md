@@ -10,6 +10,7 @@ templates remain supported by the original jte plugin.
 
 - `.kte` file type support
 - Kotlin K2 completion, resolve, references, and documentation
+- Go to Declaration and Quick Documentation for types in `@param` declarations
 - Editor highlighting for unresolved Kotlin references in template code
 - Scoped Kotlin fragments for template-aware Kotlin analysis
 - Template parameter validation and selected deterministic quick fixes

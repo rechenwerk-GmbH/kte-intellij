@@ -137,6 +137,12 @@ public class KteKotlinReferenceContributor extends PsiReferenceContributor {
                     return null;
                 }
 
+                PsiElement semanticTarget = KteKotlinFragmentSemanticService.resolveParameterReferenceAtTemplateRange(
+                        myElement, getRangeInElement());
+                if (semanticTarget != null) {
+                    return semanticTarget;
+                }
+
                 PsiClass psiClass = importResolver.resolveClass(typeReferenceText());
                 return importResolver.navigationElement(psiClass);
             }
