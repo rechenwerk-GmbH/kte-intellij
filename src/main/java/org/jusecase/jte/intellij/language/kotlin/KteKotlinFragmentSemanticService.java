@@ -25,7 +25,6 @@ import org.jusecase.jte.intellij.language.psi.JtePsiFor;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 import org.jusecase.jte.intellij.language.psi.JtePsiStatement;
-import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 import org.jusecase.jte.intellij.language.template.KteKotlinImportResolver;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
@@ -49,7 +48,7 @@ public final class KteKotlinFragmentSemanticService {
         }
 
         String propertyName = "__kte_type_probe";
-        KtFile ktFile = createKtFile(
+        KtFile ktFile = KteKotlinScratchFileFactory.createKtFile(
                 templateFile,
                 templateFile.getName() + ".type-fragment.kt",
                 importPrefix(templateFile) +
@@ -70,21 +69,19 @@ public final class KteKotlinFragmentSemanticService {
             return null;
         }
 
-        KteKotlinFragmentPlace place = place(context, injection);
+        KteKotlinFragmentPlace place = context.placeFor(injection);
         if (place == null) {
             return null;
         }
 
-        String prefix = context.prefix(place);
-        String suffix = context.suffix(place);
-        String injectionPrefix = referenceInjectionPrefix(injection);
-        String injectionSuffix = referenceInjectionSuffix(injection);
-        String fragmentText = prefix + injectionPrefix + injection.getText() + injectionSuffix + suffix;
-        KtFile ktFile = createFragmentFile(context, fragmentText);
+        KteKotlinFragmentProjection projection = KteKotlinFragmentProjection.forAnalysis(context, place);
+        PsiFile templateFile = context.host().getContainingFile();
+        KtFile ktFile = KteKotlinScratchFileFactory.createKtFile(
+                templateFile, templateFile.getName() + ".fragment.kt", projection.text());
 
         int offsetInElement = rangeInElement.getStartOffset() + rangeInElement.getLength() / 2;
-        int injectionStartInFragment = prefix.length() + injectionPrefix.length();
-        int kotlinOffset = Math.clamp(injectionStartInFragment + offsetInElement, 0, Math.max(0, fragmentText.length() - 1));
+        int injectionStartInFragment = projection.sourceInKotlin().getStartOffset();
+        int kotlinOffset = Math.clamp(injectionStartInFragment + offsetInElement, 0, Math.max(0, projection.text().length() - 1));
         PsiReference reference = findReference(ktFile, kotlinOffset);
         if (reference == null) {
             return null;
@@ -98,55 +95,10 @@ public final class KteKotlinFragmentSemanticService {
         return mapTargetBackToTemplate(context, place, ktFile, target, injectionStartInFragment);
     }
 
-    @NotNull
-    private static String referenceInjectionPrefix(@NotNull JtePsiJavaInjection injection) {
-        return PsiTreeUtil.getParentOfType(injection, JtePsiTemplate.class, false) == null ? "" : "dummyCall(";
-    }
-
-    @NotNull
-    private static String referenceInjectionSuffix(@NotNull JtePsiJavaInjection injection) {
-        return PsiTreeUtil.getParentOfType(injection, JtePsiTemplate.class, false) == null ? "" : ")";
-    }
-
     @Nullable
     private static KteKotlinFragmentContext context(@NotNull JtePsiJavaInjection injection) {
         KtePsiJavaContent host = PsiTreeUtil.getParentOfType(injection, KtePsiJavaContent.class, false);
         return host == null ? null : KteKotlinFragmentContext.from(host);
-    }
-
-    @Nullable
-    private static KteKotlinFragmentPlace place(@NotNull KteKotlinFragmentContext context,
-                                                       @NotNull JtePsiJavaInjection injection) {
-        for (KteKotlinFragmentPlace place : context.places()) {
-            if (place.injection() == injection || place.injection().getTextRange().equals(injection.getTextRange())) {
-                return place;
-            }
-        }
-        return null;
-    }
-
-    @NotNull
-    private static KtFile createFragmentFile(@NotNull KteKotlinFragmentContext context,
-                                             @NotNull String text) {
-        return createKtFile(context.host().getContainingFile(), context.host().getContainingFile().getName() + ".fragment.kt", text);
-    }
-
-    @NotNull
-    private static KtFile createKtFile(@NotNull PsiFile containingFile,
-                                       @NotNull String fileName,
-                                       @NotNull String text) {
-        KteKotlinAnalysisContextService contextService =
-                KteKotlinAnalysisContextService.getInstance(containingFile.getProject());
-        PsiElement analysisContext = contextService.findAnalysisContext(
-                containingFile,
-                contextService.findModuleSourceRoot(containingFile)
-        );
-        return KteKotlinScratchFileFactory.createKtFile(
-                containingFile.getProject(),
-                fileName,
-                text,
-                analysisContext
-        );
     }
 
     @NotNull

@@ -9,7 +9,7 @@ templates remain supported by the original jte plugin.
 ## Current Scope
 
 - `.kte` file type support
-- Kotlin K2 completion, resolve, references, documentation, and diagnostics
+- Kotlin K2 completion, resolve, references, documentation, and unresolved-reference highlighting
 - Scoped Kotlin fragments for template-aware Kotlin analysis
 - Template parameter validation and selected deterministic quick fixes
 - Formatting, folding, brace matching, live templates, and template navigation
