@@ -84,13 +84,6 @@ Requires IntelliJ IDEA 2026.1 or newer.
                    implementationClass="org.jusecase.jte.intellij.language.KteTemplateDiagnosticAnnotator"/>
         <annotator language="KotlinTemplateEngine"
                    implementationClass="org.jusecase.jte.intellij.language.kotlin.KteKotlinDiagnosticAnnotator"/>
-        <localInspection language="KotlinTemplateEngine"
-                         shortName="KteDiagnosticAudit"
-                         displayName="Audit KTE diagnostics"
-                         groupName="KTE"
-                         enabledByDefault="false"
-                         level="WARNING"
-                         implementationClass="org.jusecase.jte.intellij.language.KteDiagnosticAuditInspection"/>
         <intentionAction>
             <className>org.jusecase.jte.intellij.language.refactoring.KteOptimizeImportsIntention</className>
             <category>KTE</category>

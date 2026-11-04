@@ -7,8 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-record KteTemplateDiagnostic(@NotNull String code,
-                             @NotNull HighlightSeverity severity,
+record KteTemplateDiagnostic(@NotNull HighlightSeverity severity,
                              @NotNull String message,
                              @NotNull TextRange range,
                              @NotNull List<IntentionAction> fixes) {

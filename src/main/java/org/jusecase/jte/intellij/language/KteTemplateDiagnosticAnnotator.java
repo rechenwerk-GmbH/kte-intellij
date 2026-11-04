@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 
 public final class KteTemplateDiagnosticAnnotator implements Annotator {
-    private final KteTemplateDiagnosticCollector collector = new KteTemplateDiagnosticCollector();
+    private final KteTemplateContractDiagnosticChecker checker = new KteTemplateContractDiagnosticChecker();
 
     @Override
     public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
@@ -19,7 +19,7 @@ public final class KteTemplateDiagnosticAnnotator implements Annotator {
         }
 
         PsiFile templateFile = element.getContainingFile();
-        for (KteTemplateDiagnostic diagnostic : collector.collect(templateFile)) {
+        for (KteTemplateDiagnostic diagnostic : checker.collect(templateFile)) {
             AnnotationBuilder builder = holder.newAnnotation(diagnostic.severity(), diagnostic.message())
                     .range(diagnostic.range());
             for (IntentionAction fix : diagnostic.fixes()) {

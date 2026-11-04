@@ -20,7 +20,7 @@ The `.kte` PSI and document own edits. Kotlin PSI is an analysis view and is nev
 - KTE owns missing and duplicate template-call arguments. Kotlin owns ordinary Kotlin call errors, mapped argument expression errors, and unsupported template-call names or excess positional arguments. Suppress Kotlin argument diagnostics only when they belong to a generated template call.
 - The unused-import warning uses identifier matching in copied source spans. It skips star imports and can miss edge cases such as names in strings or backtick identifiers. Treat it as a conservative editor hint.
 - The cached model depends on its `.kte` PSI, referenced child templates, project roots, and VFS structure. Kotlin analysis symbols and types are used only inside an Analysis API session; they are not cached in the model.
-- An unexpected whole-template diagnostic analysis failure produces a visible editor warning and an `ANALYSIS_FAILURE` in the batch audit. Check the IDE log for the underlying exception.
+- An unexpected whole-template diagnostic analysis failure produces a visible editor warning. Check the IDE log for the underlying exception.
 - Completion still uses injected fragments. Do not redirect it to the whole-template file without proving host offset mapping and insertion behavior in an IDE fixture.
 
 ## JTE mode boundary

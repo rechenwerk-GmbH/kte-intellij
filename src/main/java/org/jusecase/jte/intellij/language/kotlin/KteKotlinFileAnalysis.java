@@ -1,7 +1,6 @@
 package org.jusecase.jte.intellij.language.kotlin;
 
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
@@ -52,88 +51,74 @@ public final class KteKotlinFileAnalysis {
 
     @NotNull
     Result collect(@NotNull PsiFile templateFile) {
-        return collectInternal(templateFile, !ApplicationManager.getApplication().isUnitTestMode());
+        KteKotlinModelService.Model model = KteKotlinModelService.getInstance(templateFile.getProject())
+                .getModel(templateFile);
+        KteKotlinProjection projection = model.projection();
+        KtFile ktFile = model.ktFile();
+        Set<Diagnostic> diagnostics = new LinkedHashSet<>();
+        for (PsiErrorElement error : PsiTreeUtil.findChildrenOfType(ktFile, PsiErrorElement.class)) {
+            TextRange sourceRange = projection.mapKotlinErrorRangeToTemplate(error.getTextRange());
+            if (sourceRange != null) {
+                diagnostics.add(new Diagnostic(HighlightSeverity.ERROR,
+                        "Kotlin syntax error: " + error.getErrorDescription(), sourceRange, "SYNTAX"));
+            }
+        }
+
+        List<SemanticHighlight> highlights = new ArrayList<>();
+        AnalyzeKt.analyze(ktFile, session -> {
+            for (KaDiagnosticWithPsi<?> diagnostic : session.collectDiagnostics(
+                    ktFile, KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)) {
+                if (isSourceOwnedDiagnostic(diagnostic, projection)) {
+                    continue;
+                }
+                for (TextRange range : diagnostic.getTextRanges()) {
+                    TextRange fileRange = toFileRange(diagnostic.getPsi(), range);
+                    TextRange sourceRange = fileRange == null ? null : projection.mapKotlinErrorRangeToTemplate(fileRange);
+                    if (sourceRange != null) {
+                        diagnostics.add(new Diagnostic(severity(diagnostic.getSeverity()),
+                                diagnostic.getDefaultMessage(), sourceRange, diagnostic.getFactoryName()));
+                    }
+                }
+            }
+
+            for (KtNameReferenceExpression expression : PsiTreeUtil.findChildrenOfType(
+                    ktFile, KtNameReferenceExpression.class)) {
+                TextRange sourceRange = projection.mapKotlinRangeToTemplate(expression.getTextRange());
+                if (sourceRange == null || isImportRange(projection, expression.getTextRange())) {
+                    continue;
+                }
+                for (PsiReference reference : expression.getReferences()) {
+                    if (!(reference instanceof KtReference ktReference)) {
+                        continue;
+                    }
+                    Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
+                    for (KaSymbol symbol : symbols) {
+                        TextAttributesKey key = colorFor(symbol.getPsi());
+                        if (key != null) {
+                            highlights.add(new SemanticHighlight(sourceRange, key));
+                            break;
+                        }
+                    }
+                    if (!symbols.isEmpty()) {
+                        break;
+                    }
+                }
+            }
+            return null;
+        });
+
+        collectDeclarationHighlights(projection, ktFile, highlights);
+        collectUnusedImports(templateFile, projection, diagnostics);
+        return new Result(List.copyOf(diagnostics), List.copyOf(new LinkedHashSet<>(highlights)), false);
     }
 
     @NotNull
     Result collectForEditor(@NotNull PsiFile templateFile) {
-        return collectInternal(templateFile, true);
-    }
-
-    /** Audit entry point: an analysis failure must not be mistaken for a clean file. */
-    @NotNull
-    public static List<Diagnostic> auditDiagnostics(@NotNull PsiFile templateFile) {
-        return new KteKotlinFileAnalysis().collectInternal(templateFile, false).diagnostics();
-    }
-
-    @NotNull
-    private Result collectInternal(@NotNull PsiFile templateFile, boolean tolerateFailure) {
         try {
-            KteKotlinModelService.Model model = KteKotlinModelService.getInstance(templateFile.getProject())
-                    .getModel(templateFile);
-            KteKotlinProjection projection = model.projection();
-            KtFile ktFile = model.ktFile();
-            Set<Diagnostic> diagnostics = new LinkedHashSet<>();
-            for (PsiErrorElement error : PsiTreeUtil.findChildrenOfType(ktFile, PsiErrorElement.class)) {
-                TextRange sourceRange = projection.mapKotlinErrorRangeToTemplate(error.getTextRange());
-                if (sourceRange != null) {
-                    diagnostics.add(new Diagnostic(HighlightSeverity.ERROR,
-                            "Kotlin syntax error: " + error.getErrorDescription(), sourceRange, "SYNTAX"));
-                }
-            }
-
-            List<SemanticHighlight> highlights = new ArrayList<>();
-            AnalyzeKt.analyze(ktFile, session -> {
-                for (KaDiagnosticWithPsi<?> diagnostic : session.collectDiagnostics(
-                        ktFile, KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)) {
-                    if (isSourceOwnedDiagnostic(diagnostic, projection)) {
-                        continue;
-                    }
-                    for (TextRange range : diagnostic.getTextRanges()) {
-                        TextRange fileRange = toFileRange(diagnostic.getPsi(), range);
-                        TextRange sourceRange = fileRange == null ? null : projection.mapKotlinErrorRangeToTemplate(fileRange);
-                        if (sourceRange != null) {
-                            diagnostics.add(new Diagnostic(severity(diagnostic.getSeverity()),
-                                    diagnostic.getDefaultMessage(), sourceRange, diagnostic.getFactoryName()));
-                        }
-                    }
-                }
-
-                for (KtNameReferenceExpression expression : PsiTreeUtil.findChildrenOfType(
-                        ktFile, KtNameReferenceExpression.class)) {
-                    TextRange sourceRange = projection.mapKotlinRangeToTemplate(expression.getTextRange());
-                    if (sourceRange == null || isImportRange(projection, expression.getTextRange())) {
-                        continue;
-                    }
-                    for (PsiReference reference : expression.getReferences()) {
-                        if (!(reference instanceof KtReference ktReference)) {
-                            continue;
-                        }
-                        Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
-                        for (KaSymbol symbol : symbols) {
-                            TextAttributesKey key = colorFor(symbol.getPsi());
-                            if (key != null) {
-                                highlights.add(new SemanticHighlight(sourceRange, key));
-                                break;
-                            }
-                        }
-                        if (!symbols.isEmpty()) {
-                            break;
-                        }
-                    }
-                }
-                return null;
-            });
-
-            collectDeclarationHighlights(projection, ktFile, highlights);
-            collectUnusedImports(templateFile, projection, diagnostics);
-            return new Result(List.copyOf(diagnostics), List.copyOf(new LinkedHashSet<>(highlights)), false);
+            return collect(templateFile);
         } catch (ProcessCanceledException exception) {
             throw exception;
         } catch (RuntimeException | LinkageError exception) {
-            if (!tolerateFailure) {
-                throw exception;
-            }
             LOG.warn("Unable to analyze KTE Kotlin model", exception);
             return new Result(List.of(), List.of(), true);
         }
