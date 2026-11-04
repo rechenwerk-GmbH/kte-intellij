@@ -181,7 +181,7 @@ public class ContentTokenParser extends AbstractTokenParser {
                     break;
                 }
 
-                if (currentChar == '=' && index + 1 < myEndOffset && myBuffer.charAt(index + 1) != '=' && myBuffer.charAt(index - 1) != '=' && myBuffer.charAt(index - 1) != '!') {
+                if (currentChar == '=' && isTemplateArgumentAssignment(position, index)) {
                     lexer.setCurrentState(Lexer.CONTENT_STATE_PARAM_NAME);
                     lexer.setCurrentCount(Lexer.CONTENT_COUNT_PARAM_NAME_TEMPLATE);
                     return isBeginOf(position, ',');
@@ -260,5 +260,32 @@ public class ContentTokenParser extends AbstractTokenParser {
         }
 
         return false;
+    }
+
+    private boolean isTemplateArgumentAssignment(int start, int equals) {
+        // Kotlin values may contain nested named calls or comparison operators such as >=.
+        // Only a bare name at the outer @template call depth begins a template argument.
+        if (lexer.getCurrentCount() != 0 || equals + 1 >= myEndOffset || myBuffer.charAt(equals + 1) == '=') {
+            return false;
+        }
+
+        int cursor = start;
+        if (myBuffer.charAt(cursor) == ',') {
+            cursor++;
+        }
+        while (cursor < equals && isWhitespace(cursor)) {
+            cursor++;
+        }
+        if (cursor >= equals || !Character.isJavaIdentifierStart(myBuffer.charAt(cursor))) {
+            return false;
+        }
+        cursor++;
+        while (cursor < equals && Character.isJavaIdentifierPart(myBuffer.charAt(cursor))) {
+            cursor++;
+        }
+        while (cursor < equals && isWhitespace(cursor)) {
+            cursor++;
+        }
+        return cursor == equals;
     }
 }

@@ -141,6 +141,74 @@ public class KteKotlinProjectionTest extends KtePluginFixtureSupport {
         assertTrue(kotlin, kotlin.contains("profile: com.example.Profile"));
     }
 
+    public void testNestedNamedConstructorKeepsOuterTemplateCallAndFollowingCallIntact() {
+        addTemplateRoot();
+        myFixture.addFileToProject("src/com/example/UiAlert.kt", """
+                package com.example
+                data class UiAlert(val message: String)
+                """);
+        myFixture.addFileToProject("components/alert.kte", """
+                @import com.example.UiAlert
+                @param alert: UiAlert
+                @param extraCssClass: String? = null
+                """);
+        myFixture.addFileToProject("components/textarea.kte", """
+                @param name: String
+                @param id: String
+                """);
+        String source = """
+                @import com.example.UiAlert
+                @template.components.alert(
+                    alert = UiAlert(message = "hello"),
+                    extraCssClass = "wide",
+                )
+                @template.components.textarea(
+                    name = "field",
+                    id = "field-id",
+                )
+                """;
+        myFixture.configureByText("nested-call.kte", source);
+
+        KteKotlinProjection projection = model().projection();
+        String kotlin = projection.getText();
+        assertTrue(kotlin, kotlin.contains("alert = UiAlert(message = \"hello\"),extraCssClass = \"wide\","));
+        assertTrue(kotlin, kotlin.contains("name = \"field\",id = \"field-id\","));
+        assertTrue(kotlin, kotlin.indexOf("extraCssClass = \"wide\"") < kotlin.indexOf("name = \"field\""));
+        assertTrue(PsiTreeUtil.findChildrenOfType(model().ktFile(), PsiErrorElement.class).toString(),
+                PsiTreeUtil.findChildrenOfType(model().ktFile(), PsiErrorElement.class).isEmpty());
+        assertCopiedRanges(source, projection);
+    }
+
+    public void testElvisComparisonAndInlineContentRemainInTheirTemplateArguments() {
+        addTemplateRoot();
+        myFixture.addFileToProject("components/card.kte", """
+                @param title: String
+                @param disabled: Boolean
+                @param content: gg.jte.Content
+                """);
+        String source = """
+                @param selected: String?
+                @param count: Int
+                @template.components.card(
+                    title = selected ?: "fallback",
+                    disabled = count >= 2 || count == 0,
+                    content = @`
+                        ${selected}
+                    `,
+                )
+                """;
+        myFixture.configureByText("expression-arguments.kte", source);
+
+        KteKotlinProjection projection = model().projection();
+        String kotlin = projection.getText();
+        assertTrue(kotlin, kotlin.contains("title = selected ?: \"fallback\","));
+        assertTrue(kotlin, kotlin.contains("disabled = count >= 2 || count == 0,"));
+        assertTrue(kotlin, kotlin.contains("content = object : gg.jte.Content"));
+        assertTrue(PsiTreeUtil.findChildrenOfType(model().ktFile(), PsiErrorElement.class).toString(),
+                PsiTreeUtil.findChildrenOfType(model().ktFile(), PsiErrorElement.class).isEmpty());
+        assertCopiedRanges(source, projection);
+    }
+
     public void testUnrelatedKotlinBodyEditKeepsProjection() {
         PsiFile other = myFixture.addFileToProject("src/Other.kt", "fun other() = 1\n");
         myFixture.configureByText("page.kte", "@param title: String\n${title}\n");
