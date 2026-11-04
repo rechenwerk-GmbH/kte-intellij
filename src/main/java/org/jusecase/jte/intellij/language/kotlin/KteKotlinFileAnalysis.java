@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity;
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
 import org.jetbrains.kotlin.idea.references.KtReference;
 import org.jetbrains.kotlin.psi.KtClassOrObject;
+import org.jetbrains.kotlin.psi.KtCallExpression;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
@@ -45,23 +46,28 @@ import java.util.regex.Pattern;
 public final class KteKotlinFileAnalysis {
     private static final Logger LOG = Logger.getInstance(KteKotlinFileAnalysis.class);
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
-    private static final Set<String> SOURCE_OWNED_FACTORIES = Set.of(
-            "NO_VALUE_FOR_PARAMETER", "ARGUMENT_PASSED_TWICE", "UNUSED_IMPORT"
+    private static final Set<String> TEMPLATE_ARGUMENT_FACTORIES = Set.of(
+            "NO_VALUE_FOR_PARAMETER", "ARGUMENT_PASSED_TWICE"
     );
 
     @NotNull
     Result collect(@NotNull PsiFile templateFile) {
-        return collect(templateFile, false);
+        return collectInternal(templateFile, !ApplicationManager.getApplication().isUnitTestMode());
+    }
+
+    @NotNull
+    Result collectForEditor(@NotNull PsiFile templateFile) {
+        return collectInternal(templateFile, true);
     }
 
     /** Audit entry point: an analysis failure must not be mistaken for a clean file. */
     @NotNull
     public static List<Diagnostic> auditDiagnostics(@NotNull PsiFile templateFile) {
-        return new KteKotlinFileAnalysis().collect(templateFile, true).diagnostics();
+        return new KteKotlinFileAnalysis().collectInternal(templateFile, false).diagnostics();
     }
 
     @NotNull
-    private Result collect(@NotNull PsiFile templateFile, boolean failOnError) {
+    private Result collectInternal(@NotNull PsiFile templateFile, boolean tolerateFailure) {
         try {
             KteKotlinModelService.Model model = KteKotlinModelService.getInstance(templateFile.getProject())
                     .getModel(templateFile);
@@ -80,7 +86,7 @@ public final class KteKotlinFileAnalysis {
             AnalyzeKt.analyze(ktFile, session -> {
                 for (KaDiagnosticWithPsi<?> diagnostic : session.collectDiagnostics(
                         ktFile, KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)) {
-                    if (SOURCE_OWNED_FACTORIES.contains(diagnostic.getFactoryName())) {
+                    if (isSourceOwnedDiagnostic(diagnostic, projection)) {
                         continue;
                     }
                     for (TextRange range : diagnostic.getTextRanges()) {
@@ -121,16 +127,31 @@ public final class KteKotlinFileAnalysis {
 
             collectDeclarationHighlights(projection, ktFile, highlights);
             collectUnusedImports(templateFile, projection, diagnostics);
-            return new Result(List.copyOf(diagnostics), List.copyOf(new LinkedHashSet<>(highlights)));
+            return new Result(List.copyOf(diagnostics), List.copyOf(new LinkedHashSet<>(highlights)), false);
         } catch (ProcessCanceledException exception) {
             throw exception;
         } catch (RuntimeException | LinkageError exception) {
-            if (failOnError || ApplicationManager.getApplication().isUnitTestMode()) {
+            if (!tolerateFailure) {
                 throw exception;
             }
             LOG.warn("Unable to analyze KTE Kotlin model", exception);
-            return new Result(List.of(), List.of());
+            return new Result(List.of(), List.of(), true);
         }
+    }
+
+    private static boolean isSourceOwnedDiagnostic(@NotNull KaDiagnosticWithPsi<?> diagnostic,
+                                                   @NotNull KteKotlinProjection projection) {
+        if ("UNUSED_IMPORT".equals(diagnostic.getFactoryName())) {
+            return true;
+        }
+        if (!TEMPLATE_ARGUMENT_FACTORIES.contains(diagnostic.getFactoryName())) {
+            return false;
+        }
+
+        KtCallExpression call = PsiTreeUtil.getParentOfType(diagnostic.getPsi(), KtCallExpression.class, false);
+        return call != null && call.getCalleeExpression() != null &&
+                call.getCalleeExpression().getText().startsWith(KteKotlinProjectionBuilder.TEMPLATE_CALL_PREFIX) &&
+                projection.mapKotlinRangeToTemplate(call.getCalleeExpression().getTextRange()) == null;
     }
 
     private void collectDeclarationHighlights(@NotNull KteKotlinProjection projection,
@@ -244,7 +265,9 @@ public final class KteKotlinFileAnalysis {
         };
     }
 
-    record Result(@NotNull List<Diagnostic> diagnostics, @NotNull List<SemanticHighlight> highlights) {
+    record Result(@NotNull List<Diagnostic> diagnostics,
+                  @NotNull List<SemanticHighlight> highlights,
+                  boolean analysisUnavailable) {
     }
 
     public record Diagnostic(@NotNull HighlightSeverity severity,

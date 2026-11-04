@@ -19,6 +19,8 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.psi.KtClass;
+import org.jetbrains.kotlin.lexer.KotlinLexer;
+import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jusecase.jte.intellij.language.kotlin.KteKotlinSemanticService;
 import org.jusecase.jte.intellij.language.KteLanguage;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
@@ -35,20 +37,10 @@ import org.jusecase.jte.intellij.language.template.KteKotlinImportResolver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 
 public class KteKotlinReferenceContributor extends PsiReferenceContributor {
-    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
-    private static final Set<String> KEYWORDS = Set.of(
-            "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface",
-            "is", "null", "object", "package", "return", "super", "this", "throw", "true", "try", "typealias",
-            "typeof", "val", "var", "when", "while"
-    );
-
     @Override
     public void registerReferenceProviders(@NotNull PsiReferenceRegistrar registrar) {
         registrar.registerReferenceProvider(psiElement(JtePsiJavaInjection.class), new KotlinReferenceProvider());
@@ -72,12 +64,14 @@ public class KteKotlinReferenceContributor extends PsiReferenceContributor {
             }
 
             List<PsiReference> result = new ArrayList<>();
-            Matcher matcher = IDENTIFIER.matcher(injection.getText());
-            while (matcher.find()) {
-                String identifier = matcher.group();
-                if (!KEYWORDS.contains(identifier)) {
-                    result.add(new KotlinReference(injection, new TextRange(matcher.start(), matcher.end())));
+            KotlinLexer lexer = new KotlinLexer();
+            lexer.start(injection.getText());
+            while (lexer.getTokenType() != null) {
+                if (KtTokens.IDENTIFIER.equals(lexer.getTokenType())) {
+                    result.add(new KotlinReference(injection,
+                            new TextRange(lexer.getTokenStart(), lexer.getTokenEnd())));
                 }
+                lexer.advance();
             }
 
             return result.toArray(PsiReference.EMPTY_ARRAY);

@@ -27,6 +27,7 @@ public final class JteKotlinCodegenCheck {
                     """);
             Files.writeString(templates.resolve("page.kte"), """
                     @param title: String
+                    @param maybeTitle: String?
                     @param values: List<String>
                     @if(title.isNotBlank())
                         @for(value in values)
@@ -35,8 +36,11 @@ public final class JteKotlinCodegenCheck {
                             ${values.size}
                         @endfor
                     @endif
-                    @template.components.card(title = title, content = @`
+                    @template.components.card(title = maybeTitle ?: listOf(title).first(), content = @`
                         ${title}
+                    `)
+                    @template.components.card(title = title, content = @`
+                        ${maybeTitle}
                     `)
                     """);
 
@@ -58,7 +62,8 @@ public final class JteKotlinCodegenCheck {
             String plainKotlin = generatedKotlin(plainGenerated);
 
             for (String shape : List.of("if (title.isNotBlank())", "for (value in values)",
-                    "writeUnsafeContent(value)", "writeUserContent(title)")) {
+                    "writeUnsafeContent(value)", "writeUserContent(title)",
+                    "maybeTitle ?: listOf(title).first()")) {
                 requireContains(htmlKotlin, shape);
                 requireContains(plainKotlin, shape);
             }

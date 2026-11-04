@@ -21,11 +21,16 @@ The `KteDiagnosticAudit` inspection exports the plugin's KTE editor errors and w
      --project-root /absolute/project-copy \
      --scan-log /absolute/inspection.log \
      --annotator /absolute/report-dir/Annotator.xml \
+     --plugin-revision 'plugin-commit-or-build-id' \
+     --ide-build 'IDE-build-used-for-the-run' \
+     --project-revision 'original-project-revision' \
      --json /absolute/report-dir/summary.json \
      --csv /absolute/report-dir/triage.csv
    ```
 
-The summary records a SHA-256 fingerprint of all `.kte` source files, counts by severity, origin, and code, and a row for every finding. `scan_coverage` compares the `-v2` log to the source tree. The command exits with an error if coverage or editor parity differs, or if a file's analysis failed. It still writes the JSON and CSV for investigation. The CSV adds blank `classification` and `notes` columns for manual review. Keep reports from private projects outside this repository.
+The summary records a SHA-256 fingerprint of all `.kte` source files, the supplied run versions, counts by severity, origin, and code, and a row for every finding. If the plugin build included local changes, say so in `--plugin-revision`. `scan_coverage` compares the `-v2` log to the source tree. A verified run requires both `--scan-log` and `--annotator`. The command exits with an error if coverage or editor parity differs, or if a file's analysis failed. It still writes the JSON and CSV for investigation. The CSV adds blank `classification` and `notes` columns for manual review. Keep reports from private projects outside this repository.
+
+For an exploratory summary without both checks, pass `--allow-unverified`. Its JSON result says `verification.status: unverified`; do not interpret a zero count as a clean project. Run the summarizer's synthetic report tests with `python3 -B -m unittest discover -s audit -p 'test_*.py'`.
 
 ## Interpret
 

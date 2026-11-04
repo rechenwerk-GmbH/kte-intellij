@@ -17,9 +17,10 @@ The `.kte` PSI and document own edits. Kotlin PSI is an analysis view and is nev
 
 - A source mapping covers only text copied exactly from `.kte` to the in-memory Kotlin file. Generated names, wrapper code, and synthetic child-template stubs have no source mapping.
 - A Kotlin diagnostic appears in `.kte` only when its complete range fits one mapped span. Diagnostics spanning generated and source text are dropped.
-- KTE owns template-call structure. Kotlin owns errors on mapped expressions and unsupported named or positional arguments. Keep this division explicit when adding checks or suppression rules.
+- KTE owns missing and duplicate template-call arguments. Kotlin owns ordinary Kotlin call errors, mapped argument expression errors, and unsupported template-call names or excess positional arguments. Suppress Kotlin argument diagnostics only when they belong to a generated template call.
 - The unused-import warning uses identifier matching in copied source spans. It skips star imports and can miss edge cases such as names in strings or backtick identifiers. Treat it as a conservative editor hint.
 - The cached model depends on its `.kte` PSI, referenced child templates, project roots, and VFS structure. Kotlin analysis symbols and types are used only inside an Analysis API session; they are not cached in the model.
+- An unexpected whole-template diagnostic analysis failure produces a visible editor warning and an `ANALYSIS_FAILURE` in the batch audit. Check the IDE log for the underlying exception.
 - Completion still uses injected fragments. Do not redirect it to the whole-template file without proving host offset mapping and insertion behavior in an IDE fixture.
 
 ## JTE mode boundary
@@ -43,7 +44,7 @@ Run these before changing projection or module setup:
 
 The IDE fixture uses a 4 GiB test JVM heap. At 2 GiB, repeated K2 completion tests caused sustained garbage collection and hit IntelliJ's 100-second completion timeout.
 
-The benchmark prints three edit-and-highlight samples for a 200-expression template. It has no absolute timing assertion because CI machines vary. Compare samples on the same machine and IDE version, then profile any large regression.
+The benchmark prints three edit-and-highlight samples for a 200-expression template and completion samples at 50, 50, 200, and 200 expressions. The repeated sizes help distinguish JVM warmup from template-size effects. It has no absolute timing assertion because CI machines vary. Compare samples on the same machine and IDE version, then profile any large regression.
 
 In a real JTE Kotlin project, smoke-test these editor actions in both HTML and Plain configurations:
 

@@ -23,6 +23,7 @@ import java.util.Set;
 
 public final class KteKotlinProjectionBuilder {
     private static final String COMPLETION_DUMMY_IDENTIFIER = CompletionInitializationContext.DUMMY_IDENTIFIER_TRIMMED;
+    static final String TEMPLATE_CALL_PREFIX = "__jte_template_";
 
     @NotNull
     public KteKotlinProjection build(@NotNull PsiFile templateFile) {
@@ -279,7 +280,7 @@ public final class KteKotlinProjectionBuilder {
 
         @NotNull
         private String templateFunctionName(@NotNull String key) {
-            return uniqueName("__jte_template_" + key.replaceAll("[^A-Za-z0-9_]", "_"));
+            return uniqueName(TEMPLATE_CALL_PREFIX + key.replaceAll("[^A-Za-z0-9_]", "_"));
         }
 
         @NotNull

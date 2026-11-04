@@ -35,3 +35,6 @@ jobs:
 
     - name: Build with Gradle Wrapper
       run: ./gradlew build
+
+    - name: Test audit summarizer
+      run: python3 -B -m unittest discover -s audit -p 'test_*.py'

@@ -12,19 +12,8 @@ import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 final class KteKotlinTypeRenderer {
-    private static final Pattern TYPE_REFERENCE = Pattern.compile("[A-Za-z_][A-Za-z0-9_.]*");
-    private static final Set<String> KNOWN_TYPE_NAMES = Set.of(
-            "Any", "Array", "Boolean", "Byte", "Char", "Collection", "Double", "Float", "Int", "Iterable",
-            "List", "Long", "Map", "MutableList", "MutableMap", "MutableSet", "Nothing", "Sequence", "Set",
-            "Short", "String", "Unit"
-    );
-    private static final Set<String> TYPE_KEYWORDS = Set.of("in", "out", "where");
-
     private final Project project;
     private final GlobalSearchScope scope;
     private final Imports parentImports;
@@ -44,18 +33,13 @@ final class KteKotlinTypeRenderer {
 
     @NotNull
     private String renderTypeText(@NotNull String typeText, @NotNull Imports childImports) {
-        Matcher matcher = TYPE_REFERENCE.matcher(typeText);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            matcher.appendReplacement(result, Matcher.quoteReplacement(renderTypeReference(matcher.group(), childImports)));
-        }
-        matcher.appendTail(result);
-        return result.toString();
+        return KteKotlinTypeText.rewriteReferences(typeText,
+                reference -> renderTypeReference(reference, childImports));
     }
 
     @NotNull
     private String renderTypeReference(@NotNull String typeName, @NotNull Imports childImports) {
-        if (TYPE_KEYWORDS.contains(typeName)) {
+        if (KteKotlinTypeText.isTypeKeyword(typeName)) {
             return typeName;
         }
 
@@ -71,7 +55,7 @@ final class KteKotlinTypeRenderer {
             return childQualifiedName;
         }
 
-        if (isKnownTypeName(typeName) || parentImports.resolves(typeName, this::classExists)) {
+        if (KteKotlinTypeText.isKnownTypeName(typeName) || parentImports.resolves(typeName, this::classExists)) {
             return typeName;
         }
 
@@ -82,10 +66,6 @@ final class KteKotlinTypeRenderer {
 
     private boolean classExists(@NotNull String qualifiedName) {
         return JavaPsiFacade.getInstance(project).findClass(qualifiedName, scope) != null;
-    }
-
-    private boolean isKnownTypeName(@NotNull String typeName) {
-        return KNOWN_TYPE_NAMES.contains(KteKotlinTypeText.shortName(typeName));
     }
 
     private interface ClassLookup {

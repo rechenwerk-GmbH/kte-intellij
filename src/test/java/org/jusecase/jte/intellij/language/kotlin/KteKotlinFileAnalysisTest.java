@@ -116,6 +116,41 @@ public class KteKotlinFileAnalysisTest extends KtePluginFixtureSupport {
                         diagnostic.severity() == HighlightSeverity.ERROR));
     }
 
+    public void testOrdinaryKotlinCallArgumentErrorsAreNotOwnedByTemplateChecks() {
+        myFixture.addFileToProject("src/com/example/Functions.kt", """
+                package com.example
+                fun greet(name: String): String = name
+                """);
+        String source = """
+                @import com.example.greet
+                ${greet()}
+                ${greet(name = "A", name = "B")}
+                """;
+        myFixture.configureByText("ordinary-calls.kte", source);
+
+        KteKotlinFileAnalysis.Result result = analyze();
+        assertTrue(result.diagnostics().toString(), result.diagnostics().stream().anyMatch(diagnostic ->
+                "NO_VALUE_FOR_PARAMETER".equals(diagnostic.factoryName()) &&
+                        diagnostic.range().intersects(sourceRange(source, "greet()"))));
+        assertTrue(result.diagnostics().toString(), result.diagnostics().stream().anyMatch(diagnostic ->
+                "ARGUMENT_PASSED_TWICE".equals(diagnostic.factoryName()) &&
+                        diagnostic.range().intersects(sourceRange(source, "name = \"B\""))));
+    }
+
+    public void testTemplateCallArgumentErrorsRemainOwnedByTemplateChecks() {
+        addTemplateRoot();
+        myFixture.addFileToProject("components/card.kte", "@param title: String\n");
+        myFixture.configureByText("template-calls.kte", """
+                @template.components.card()
+                @template.components.card(title = "A", title = "B")
+                """);
+
+        KteKotlinFileAnalysis.Result result = analyze();
+        assertFalse(result.diagnostics().toString(), result.diagnostics().stream().anyMatch(diagnostic ->
+                "NO_VALUE_FOR_PARAMETER".equals(diagnostic.factoryName()) ||
+                        "ARGUMENT_PASSED_TWICE".equals(diagnostic.factoryName())));
+    }
+
     public void testExternalKotlinEditUpdatesAnalysisWithoutRebuildingProjection() {
         PsiFile modelSource = myFixture.addFileToProject("src/com/example/Holder.kt", """
                 package com.example
@@ -167,6 +202,15 @@ public class KteKotlinFileAnalysisTest extends KtePluginFixtureSupport {
                 DefaultLanguageHighlighterColors.LOCAL_VARIABLE);
         assertColor(result, sourceRange(source, "UiLabels.title"), "UiLabels",
                 DefaultLanguageHighlighterColors.CLASS_NAME);
+    }
+
+    public void testEditorAnalysisReportsUnavailableInsteadOfReturningACleanResult() {
+        PsiFile nonTemplate = myFixture.configureByText("not-a-template.kt", "val value = 1\n");
+
+        KteKotlinFileAnalysis.Result result = new KteKotlinFileAnalysis().collectForEditor(nonTemplate);
+        assertTrue(result.analysisUnavailable());
+        assertTrue(result.diagnostics().isEmpty());
+        assertTrue(result.highlights().isEmpty());
     }
 
     private void assertColor(KteKotlinFileAnalysis.Result result,

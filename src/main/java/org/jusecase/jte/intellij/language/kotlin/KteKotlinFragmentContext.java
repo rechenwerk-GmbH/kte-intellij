@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
@@ -40,14 +39,7 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
         places = List.copyOf(places);
     }
 
-    private static final Pattern TYPE_REFERENCE = Pattern.compile("[A-Za-z_][A-Za-z0-9_.]*");
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
-    private static final List<String> KNOWN_TYPE_NAMES = List.of(
-            "Any", "Array", "Boolean", "Byte", "Char", "Collection", "Double", "Float", "Int", "Iterable",
-            "List", "Long", "Map", "MutableList", "MutableMap", "MutableSet", "Nothing", "Sequence", "Set",
-            "Short", "String", "Unit"
-    );
-    private static final List<String> TYPE_KEYWORDS = List.of("in", "out", "where");
 
     @NotNull
     static KteKotlinFragmentContext from(@NotNull KtePsiJavaContent host) {
@@ -131,25 +123,24 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
 
     @NotNull
     private static String qualifyType(@NotNull String type, @NotNull KteKotlinImportResolver importResolver) {
-        Matcher matcher = TYPE_REFERENCE.matcher(type);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            matcher.appendReplacement(result, Matcher.quoteReplacement(qualifyTypeReference(matcher.group(), importResolver)));
-        }
-        matcher.appendTail(result);
-        return result.toString();
+        return KteKotlinTypeText.rewriteReferences(type,
+                reference -> qualifyTypeReference(reference, importResolver));
     }
 
     @NotNull
     private static String qualifyTypeReference(@NotNull String typeName, @NotNull KteKotlinImportResolver importResolver) {
-        if (typeName.contains(".") ||
-                TYPE_KEYWORDS.contains(typeName) ||
-                KNOWN_TYPE_NAMES.contains(KteKotlinTypeText.shortName(typeName))) {
+        if (KteKotlinTypeText.isTypeKeyword(typeName)) {
             return typeName;
         }
 
-        PsiClass psiClass = importResolver.resolveClass(typeName);
-        return psiClass == null || psiClass.getQualifiedName() == null ? typeName : psiClass.getQualifiedName();
+        int separator = typeName.indexOf('.');
+        if (separator < 0 && KteKotlinTypeText.isKnownTypeName(typeName)) {
+            return typeName;
+        }
+        String rootName = separator < 0 ? typeName : typeName.substring(0, separator);
+        PsiClass psiClass = importResolver.resolveClass(rootName);
+        String qualifiedName = psiClass == null ? null : psiClass.getQualifiedName();
+        return qualifiedName == null ? typeName : qualifiedName + typeName.substring(rootName.length());
     }
 
     @NotNull

@@ -5,6 +5,7 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jusecase.jte.intellij.language.psi.KtePsiFile;
@@ -22,7 +23,16 @@ public final class KteKotlinDiagnosticAnnotator implements Annotator {
             return;
         }
 
-        KteKotlinFileAnalysis.Result result = analysis.collect(templateFile);
+        KteKotlinFileAnalysis.Result result = analysis.collectForEditor(templateFile);
+        if (result.analysisUnavailable()) {
+            if (templateFile.getTextLength() > 0) {
+                holder.newAnnotation(HighlightSeverity.WARNING,
+                                "KTE Kotlin analysis unavailable; see the IDE log")
+                        .range(TextRange.from(0, 1))
+                        .create();
+            }
+            return;
+        }
         for (KteKotlinFileAnalysis.Diagnostic diagnostic : result.diagnostics()) {
             AnnotationBuilder builder = holder.newAnnotation(diagnostic.severity(), diagnostic.message())
                     .range(diagnostic.range());
