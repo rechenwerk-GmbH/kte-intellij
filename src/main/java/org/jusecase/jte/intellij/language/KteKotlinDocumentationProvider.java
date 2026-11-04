@@ -22,7 +22,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.JtePsiTemplateName;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
-import java.util.Collection;
+import java.util.List;
 
 public final class KteKotlinDocumentationProvider extends AbstractDocumentationProvider {
     @Override
@@ -30,6 +30,11 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
                                                              PsiFile file,
                                                              @Nullable PsiElement contextElement,
                                                              int targetOffset) {
+        JtePsiTemplateName templateCall = templateCallAtOffset(file, targetOffset);
+        if (templateCall != null) {
+            return templateCall;
+        }
+
         PsiElement declarationAtOffset = resolveDeclarationAtOffset(file, targetOffset);
         if (declarationAtOffset != null) {
             return declarationAtOffset;
@@ -49,7 +54,9 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
             return elementDeclaration;
         }
 
-        PsiElement target = element == originalElement ? resolveTarget(originalElement) : element;
+        PsiElement target = element instanceof JtePsiTemplateName templateName
+                ? templateName.resolveFile()
+                : element == originalElement ? resolveTarget(originalElement) : element;
 
         String templateSignature = templateSignatureText(target, originalElement);
         if (templateSignature != null) {
@@ -159,7 +166,8 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
             return null;
         }
 
-        Collection<JtePsiTemplateName> names = PsiTreeUtil.findChildrenOfType(template, JtePsiTemplateName.class);
+        // Inline content can contain other template calls; only this call's path is a direct child.
+        List<JtePsiTemplateName> names = PsiTreeUtil.getChildrenOfTypeAsList(template, JtePsiTemplateName.class);
         if (names.isEmpty()) {
             return null;
         }
@@ -244,6 +252,17 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
         }
 
         return null;
+    }
+
+    @Nullable
+    private JtePsiTemplateName templateCallAtOffset(@NotNull PsiFile file, int targetOffset) {
+        if (targetOffset < 0 || targetOffset >= file.getTextLength()) {
+            return null;
+        }
+
+        JtePsiTemplateName name = PsiTreeUtil.getParentOfType(
+                file.findElementAt(targetOffset), JtePsiTemplateName.class, false);
+        return name != null && !name.isDirectory() && name.resolveFile() != null ? name : null;
     }
 
     @Nullable

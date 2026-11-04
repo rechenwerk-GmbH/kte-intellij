@@ -1,11 +1,13 @@
 package org.jusecase.jte.intellij.language;
 
+import com.intellij.codeInsight.documentation.DocumentationManager;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.platform.backend.documentation.DocumentationData;
 import com.intellij.platform.backend.documentation.DocumentationResult;
 import com.intellij.platform.backend.documentation.DocumentationTarget;
 import com.intellij.platform.backend.documentation.PsiDocumentationTargetProvider;
 import com.intellij.psi.PsiElement;
+import org.jusecase.jte.intellij.language.psi.JtePsiTemplateName;
 
 public class KteKotlinDocumentationProviderTest extends KtePluginFixtureSupport {
     public void testKotlinStringParamTypeUsesPlatformDocumentation() {
@@ -247,6 +249,42 @@ public class KteKotlinDocumentationProviderTest extends KtePluginFixtureSupport 
         assertTrue(documentation, documentationText.contains("template components.signatureKitchenSink("));
         assertTrue(documentation, documentationText.contains("profile: Profile"));
         assertTrue(documentation, documentationText.contains("vararg labels: String"));
+    }
+
+    public void testTemplateCallDocumentationExcludesNestedTemplateNames() {
+        addTemplateRoot();
+        myFixture.addFileToProject("ui/modal/modal_shell.kte", """
+                @param id: String
+                @param body: gg.jte.Content? = null
+                """);
+        myFixture.addFileToProject("form/fields/text_input.kte", "@param name: String\n");
+        myFixture.configureByText("parent.kte", """
+                @template.ui.modal.modal_<caret>shell(
+                    id = "modal",
+                    body = @`
+                        @template.form.fields.text_input(name = "field")
+                    `
+                )
+                """);
+
+        String info = quickNavigateInfoAtCaret();
+        String documentation = documentationAtCaret();
+        assertNotNull(info);
+        assertNotNull(documentation);
+        assertTrue(info, info.startsWith("template ui.modal.modal_shell("));
+        assertFalse(info, info.contains("form.fields.text_input"));
+        assertFalse(documentation, plainDocumentationText(documentation).contains("form.fields.text_input"));
+        PsiElement original = elementAtCaret();
+        PsiElement target = DocumentationManager.getInstance(getProject())
+                .findTargetElement(myFixture.getEditor(), myFixture.getFile(), original);
+        assertNotNull(target);
+        assertTrue(target.toString(), target instanceof JtePsiTemplateName);
+        var managerProvider = DocumentationManager.getProviderFromElement(target);
+        assertEquals(info, managerProvider.getQuickNavigateInfo(target, original));
+        String managedDocumentation = managerProvider.generateDoc(target, original);
+        assertNotNull(managedDocumentation);
+        assertTrue(managedDocumentation, plainDocumentationText(managedDocumentation)
+                .contains("template ui.modal.modal_shell("));
     }
 
     public void testUnresolvedTemplateReferenceDoesNotShowMisleadingSignature() {
