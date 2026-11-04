@@ -1,6 +1,6 @@
 package org.jusecase.jte.intellij.language.parsing;
 
-import com.intellij.psi.tree.*;
+import com.intellij.psi.tree.IElementType;
 
 public interface TokenTypes {
     IElementType HTML_CONTENT();
@@ -42,17 +42,7 @@ public interface TokenTypes {
     IElementType CONTENT_END();
 
     IElementType COMMENT();
-    IElementType COMMENT_CONTENT();
-
     IElementType WHITESPACE();
     IElementType EQUALS();
     IElementType COMMA();
-
-    IElementType STRING();
-
-    IFileElementType FILE();
-
-    TokenSet COMMENTS();
-    TokenSet STRING_LITERALS();
-    TokenSet WHITESPACES();
 }

@@ -132,18 +132,6 @@ public final class KteNativeTemplateSourceEditUtil {
         return true;
     }
 
-    public static boolean replaceImport(@NotNull PsiFile file,
-                                        @NotNull TextRange importRange,
-                                        @NotNull String qualifiedName) {
-        if (!isValidRange(file, importRange)) {
-            return false;
-        }
-
-        replace(file, importRange, qualifiedName);
-        optimizeImports(file);
-        return true;
-    }
-
     @Nullable
     private static Document document(@NotNull PsiFile file) {
         return PsiDocumentManager.getInstance(file.getProject()).getDocument(file);

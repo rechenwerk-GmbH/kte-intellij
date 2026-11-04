@@ -9,13 +9,8 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 
 public final class KteRemoveImportIntention implements IntentionAction {
-    private static final String UNRESOLVED_TEXT = "Remove unresolved .kte import";
     private final TextRange importRange;
     private final String text;
-
-    public KteRemoveImportIntention(@NotNull TextRange importRange) {
-        this(importRange, UNRESOLVED_TEXT);
-    }
 
     @NotNull
     public static KteRemoveImportIntention unused(@NotNull TextRange importRange) {

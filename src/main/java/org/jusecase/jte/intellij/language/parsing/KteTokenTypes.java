@@ -226,11 +226,6 @@ public class KteTokenTypes implements TokenTypes {
     }
 
     @Override
-    public IElementType COMMENT_CONTENT() {
-        return COMMENT_CONTENT;
-    }
-
-    @Override
     public IElementType WHITESPACE() {
         return WHITESPACE;
     }
@@ -243,30 +238,5 @@ public class KteTokenTypes implements TokenTypes {
     @Override
     public IElementType COMMA() {
         return COMMA;
-    }
-
-    @Override
-    public IElementType STRING() {
-        return STRING;
-    }
-
-    @Override
-    public IFileElementType FILE() {
-        return FILE;
-    }
-
-    @Override
-    public TokenSet COMMENTS() {
-        return COMMENTS;
-    }
-
-    @Override
-    public TokenSet STRING_LITERALS() {
-        return STRING_LITERALS;
-    }
-
-    @Override
-    public TokenSet WHITESPACES() {
-        return WHITESPACES;
     }
 }

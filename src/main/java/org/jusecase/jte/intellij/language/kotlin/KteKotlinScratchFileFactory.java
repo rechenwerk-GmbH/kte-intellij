@@ -15,13 +15,6 @@ public final class KteKotlinScratchFileFactory {
     }
 
     @NotNull
-    public static KtFile createKtFile(@NotNull Project project,
-                                      @NotNull String fileName,
-                                      @NotNull String text) {
-        return createKtFile(project, fileName, text, null);
-    }
-
-    @NotNull
     static KtFile createKtFile(@NotNull PsiFile templateFile,
                                @NotNull String fileName,
                                @NotNull String text) {

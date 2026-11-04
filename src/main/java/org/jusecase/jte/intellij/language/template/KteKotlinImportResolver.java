@@ -122,16 +122,6 @@ public final class KteKotlinImportResolver {
     }
 
     @Nullable
-    public PsiElement resolveImportedVisibleName(@NotNull String visibleName) {
-        for (ImportInfo importInfo : imports()) {
-            if (!importInfo.star() && importInfo.visibleName().equals(visibleName)) {
-                return resolveImport(importInfo);
-            }
-        }
-        return null;
-    }
-
-    @Nullable
     private PsiElement resolveImport(@NotNull ImportInfo importInfo) {
         PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(importInfo.qualifiedName(), scope);
         if (psiClass != null) {

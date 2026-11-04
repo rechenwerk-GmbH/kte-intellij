@@ -5,7 +5,6 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;

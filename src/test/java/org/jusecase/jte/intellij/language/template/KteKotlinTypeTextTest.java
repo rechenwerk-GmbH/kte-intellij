@@ -1,6 +1,5 @@
 package org.jusecase.jte.intellij.language.template;
 
-import org.jusecase.jte.intellij.language.KtePluginFixtureSupport;
 
 import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
 import org.junit.Test;

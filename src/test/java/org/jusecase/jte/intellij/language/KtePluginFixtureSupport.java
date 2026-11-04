@@ -223,15 +223,6 @@ public abstract class KtePluginFixtureSupport extends LightJavaCodeInsightFixtur
         myFixture.addFileToProject(".jteroot", "");
     }
 
-    protected void addCareOfferingSectionTemplate() {
-        myFixture.addFileToProject("components/care_offering_form_section.kte", """
-                @import com.example.CareOfferingForm
-                @param form: CareOfferingForm
-
-                <section>${form.displayName}</section>
-                """);
-    }
-
     protected void addCardTemplate() {
         myFixture.addFileToProject("components/card.kte", """
                 @import com.example.Profile
@@ -287,23 +278,6 @@ public abstract class KtePluginFixtureSupport extends LightJavaCodeInsightFixtur
                 """);
     }
 
-    protected void addProfileSummaryTemplate() {
-        myFixture.addFileToProject("components/profileSummary.kte", """
-                @import com.example.Profile
-                @param profile: Profile
-                @param title: String
-                @param optionalEmail: String? = null
-                @param tags: List<String>
-                @param content: gg.jte.Content
-
-                <article>
-                    <h3>${title}</h3>
-                    @template.components.tagList(tags = tags)
-                    ${content}
-                </article>
-                """);
-    }
-
     protected void addTagListTemplate() {
         myFixture.addFileToProject("components/tagList.kte", """
                 @param tags: List<String>
@@ -343,30 +317,8 @@ public abstract class KtePluginFixtureSupport extends LightJavaCodeInsightFixtur
                 .toList();
     }
 
-    protected void assertContainsDescription(String description) {
-        assertContainsDescription(errorDescriptions(), description);
-    }
-
     protected void assertContainsDescription(List<String> descriptions, String description) {
         assertTrue("Expected " + description + " in " + descriptions, descriptions.contains(description));
-    }
-
-    protected void assertDoesNotContainDescription(String description) {
-        assertDoesNotContainDescription(errorDescriptions(), description);
-    }
-
-    protected void assertDoesNotContainDescription(List<String> descriptions, String description) {
-        assertFalse("Did not expect " + description + " in " + descriptions, descriptions.contains(description));
-    }
-
-    protected void assertContainsWarningDescription(String description) {
-        List<String> descriptions = warningDescriptions();
-        assertTrue("Expected warning " + description + " in " + descriptions, descriptions.contains(description));
-    }
-
-    protected void assertDoesNotContainWarningDescription(String description) {
-        List<String> descriptions = warningDescriptions();
-        assertFalse("Did not expect warning " + description + " in " + descriptions, descriptions.contains(description));
     }
 
     protected void assertNoContractErrors() {
