@@ -1,6 +1,7 @@
 package org.jusecase.jte.intellij.language.kotlin;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
@@ -29,6 +30,7 @@ import java.util.Collection;
 
 /** Resolves .kte references through the shared Kotlin model. Type probes avoid recursive model construction. */
 public final class KteKotlinSemanticService {
+    private static final Logger LOG = Logger.getInstance(KteKotlinSemanticService.class);
     private KteKotlinSemanticService() {
     }
 
@@ -98,6 +100,7 @@ public final class KteKotlinSemanticService {
             if (ApplicationManager.getApplication().isUnitTestMode()) {
                 throw exception;
             }
+            LOG.warn("Unable to resolve KTE Kotlin reference", exception);
             return null;
         }
     }
@@ -182,6 +185,7 @@ public final class KteKotlinSemanticService {
             if (ApplicationManager.getApplication().isUnitTestMode()) {
                 throw exception;
             }
+            LOG.warn("Unable to resolve a synthetic Kotlin reference", exception);
             return null;
         }
     }
@@ -209,6 +213,7 @@ public final class KteKotlinSemanticService {
             if (ApplicationManager.getApplication().isUnitTestMode()) {
                 throw exception;
             }
+            LOG.warn("Unable to analyze a KTE parameter type", exception);
             return null;
         }
     }

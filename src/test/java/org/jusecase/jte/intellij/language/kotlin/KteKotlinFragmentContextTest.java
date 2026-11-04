@@ -57,8 +57,9 @@ public class KteKotlinFragmentContextTest extends KtePluginFixtureSupport {
                 """);
         KteKotlinFragmentPlace place = findPlace(context, "profile.displayName");
 
-        String prefix = context.prefix(place);
-        String suffix = context.suffix(place);
+        KteKotlinFragmentContext.Scaffolding scaffolding = context.scaffolding(place);
+        String prefix = scaffolding.prefix();
+        String suffix = scaffolding.suffix();
 
         assertEquals("com.example.Profile", context.parameters().get("profile"));
         assertEquals("List<com.example.Profile>", context.parameters().get("profiles"));
@@ -83,7 +84,7 @@ public class KteKotlinFragmentContextTest extends KtePluginFixtureSupport {
                 """);
         KteKotlinFragmentPlace place = findPlace(context, "first.displayName");
 
-        String prefix = context.prefix(place);
+        String prefix = context.scaffolding(place).prefix();
 
         assertTrue(prefix.contains("val first = requireNotNull(page.careOfferingForm)\n"));
         assertFalse(prefix.contains("val future = first"));
@@ -102,8 +103,9 @@ public class KteKotlinFragmentContextTest extends KtePluginFixtureSupport {
                 """);
         KteKotlinFragmentPlace place = findPlace(context, "profile.displayName");
 
-        String prefix = context.prefix(place);
-        String suffix = context.suffix(place);
+        KteKotlinFragmentContext.Scaffolding scaffolding = context.scaffolding(place);
+        String prefix = scaffolding.prefix();
+        String suffix = scaffolding.suffix();
 
         assertTrue(prefix.contains("for (profile in profiles) {\n"));
         assertTrue(prefix.endsWith("for (profile in profiles) {\n"));

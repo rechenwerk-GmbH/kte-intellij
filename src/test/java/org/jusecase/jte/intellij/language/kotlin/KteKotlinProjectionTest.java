@@ -48,11 +48,7 @@ public class KteKotlinProjectionTest extends KtePluginFixtureSupport {
         int call = projection.getText().lastIndexOf("__jte_template_");
         assertTrue(projection.getText(), call >= 0);
         assertNull(projection.mapKotlinOffsetToTemplate(call));
-        assertNull(projection.mapKotlinSourceEditRangeToTemplate(TextRange.from(call, "__jte_template_".length())));
-        assertEquals(1, projection.getGeneratedCalls().size());
-        assertEquals("header", source.substring(
-                projection.getGeneratedCalls().getFirst().templateNameRange().getStartOffset(),
-                projection.getGeneratedCalls().getFirst().templateNameRange().getEndOffset()));
+        assertNull(projection.mapKotlinRangeToTemplate(TextRange.from(call, "__jte_template_".length())));
         assertCopiedRanges(source, projection);
     }
 

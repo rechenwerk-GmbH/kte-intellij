@@ -2,6 +2,7 @@ package org.jusecase.jte.intellij.language.kotlin;
 
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -29,8 +30,7 @@ import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
 import org.jetbrains.kotlin.psi.KtParameter;
 import org.jetbrains.kotlin.psi.KtProperty;
-import org.jusecase.jte.intellij.language.psi.JtePsiImport;
-import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
+import org.jusecase.jte.intellij.language.template.KteKotlinImportResolver;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 
 /** One analysis pass for source-mapped Kotlin errors and semantic token colors. */
 final class KteKotlinFileAnalysis {
+    private static final Logger LOG = Logger.getInstance(KteKotlinFileAnalysis.class);
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Set<String> SOURCE_OWNED_FACTORIES = Set.of(
             "NO_VALUE_FOR_PARAMETER", "ARGUMENT_PASSED_TWICE", "UNUSED_IMPORT"
@@ -116,6 +117,7 @@ final class KteKotlinFileAnalysis {
             if (ApplicationManager.getApplication().isUnitTestMode()) {
                 throw exception;
             }
+            LOG.warn("Unable to analyze KTE Kotlin model", exception);
             return new Result(List.of(), List.of());
         }
     }
@@ -193,24 +195,17 @@ final class KteKotlinFileAnalysis {
             }
         }
 
-        for (JtePsiImport directive : PsiTreeUtil.findChildrenOfType(templateFile, JtePsiImport.class)) {
-            JtePsiJavaInjection source = PsiTreeUtil.getChildOfType(directive, JtePsiJavaInjection.class);
-            if (source == null) {
+        for (var directive : new KteKotlinImportResolver(templateFile).importDirectives()) {
+            if (directive.info().star()) {
                 continue;
             }
-            String imported = source.getText().trim();
-            if (imported.isEmpty() || imported.endsWith(".*")) {
-                continue;
-            }
-            int aliasOffset = imported.lastIndexOf(" as ");
-            String visibleName = aliasOffset < 0 ? imported.substring(imported.lastIndexOf('.') + 1)
-                    : imported.substring(aliasOffset + 4).trim();
+            String visibleName = directive.info().visibleName();
             boolean unresolved = diagnostics.stream().anyMatch(diagnostic ->
                     "UNRESOLVED_IMPORT".equals(diagnostic.factoryName()) &&
-                            diagnostic.range().intersects(source.getTextRange()));
+                            diagnostic.range().intersects(directive.source().getTextRange()));
             if (!unresolved && !usedNames.contains(visibleName)) {
                 diagnostics.add(new Diagnostic(HighlightSeverity.WARNING,
-                        "Unused KTE import", source.getTextRange(), "UNUSED_IMPORT"));
+                        "Unused KTE import", directive.source().getTextRange(), "UNUSED_IMPORT"));
             }
         }
     }

@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.JavaExec
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
@@ -15,6 +16,8 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
+
+val jteCompatibility by sourceSets.creating
 
 repositories {
     mavenCentral()
@@ -41,6 +44,7 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("gg.jte:jte-runtime:3.2.4")
+    add(jteCompatibility.implementationConfigurationName, "gg.jte:jte-kotlin:3.2.4")
 }
 
 intellijPlatform {
@@ -67,5 +71,22 @@ tasks {
     patchPluginXml {
         sinceBuild = provider { intellijSinceBuild }
         untilBuild = provider { null }
+    }
+
+    test {
+        // Kotlin analysis fixtures retain IDE caches across tests; the default 2 GiB heap thrashes.
+        maxHeapSize = "4g"
+    }
+
+    register<JavaExec>("checkJteKotlinCodegen") {
+        group = "verification"
+        description = "Checks template syntax against the real JTE Kotlin code generator in an isolated JVM."
+        dependsOn(jteCompatibility.classesTaskName)
+        classpath = jteCompatibility.runtimeClasspath
+        mainClass = "org.jusecase.jte.intellij.compat.JteKotlinCodegenCheck"
+    }
+
+    named("check") {
+        dependsOn("checkJteKotlinCodegen")
     }
 }

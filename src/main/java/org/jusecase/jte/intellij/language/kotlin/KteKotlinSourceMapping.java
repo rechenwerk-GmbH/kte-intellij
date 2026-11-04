@@ -15,36 +15,21 @@ public final class KteKotlinSourceMapping {
         IF_CONDITION,
         ELSE_IF_CONDITION,
         FOR_CONDITION,
-        TEMPLATE_CALL,
         TEMPLATE_ARGUMENT_NAME,
         TEMPLATE_ARGUMENT_VALUE
-    }
-
-    public enum EditPolicy {
-        SOURCE_EDITABLE,
-        IMPORT_EDITABLE
     }
 
     private final Kind kind;
     private final TextRange templateRange;
     private final TextRange kotlinRange;
-    private final EditPolicy editPolicy;
 
     public KteKotlinSourceMapping(@NotNull Kind kind, @NotNull TextRange templateRange, @NotNull TextRange kotlinRange) {
-        this(kind, templateRange, kotlinRange, defaultEditPolicy(kind));
-    }
-
-    public KteKotlinSourceMapping(@NotNull Kind kind,
-                                          @NotNull TextRange templateRange,
-                                          @NotNull TextRange kotlinRange,
-                                          @NotNull EditPolicy editPolicy) {
         if (templateRange.isEmpty() || templateRange.getLength() != kotlinRange.getLength()) {
             throw new IllegalArgumentException("A source mapping must copy a nonempty span exactly");
         }
         this.kind = kind;
         this.templateRange = templateRange;
         this.kotlinRange = kotlinRange;
-        this.editPolicy = editPolicy;
     }
 
     @NotNull
@@ -60,11 +45,6 @@ public final class KteKotlinSourceMapping {
     @NotNull
     public TextRange getKotlinRange() {
         return kotlinRange;
-    }
-
-    @NotNull
-    public EditPolicy getEditPolicy() {
-        return editPolicy;
     }
 
     @Nullable
@@ -114,8 +94,4 @@ public final class KteKotlinSourceMapping {
                 range.getEndOffset() <= container.getEndOffset();
     }
 
-    @NotNull
-    private static EditPolicy defaultEditPolicy(@NotNull Kind kind) {
-        return kind == Kind.IMPORT ? EditPolicy.IMPORT_EDITABLE : EditPolicy.SOURCE_EDITABLE;
-    }
 }

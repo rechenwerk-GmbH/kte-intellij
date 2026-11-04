@@ -90,7 +90,12 @@ public final class KteKotlinImportResolver {
 
     @NotNull
     public List<ImportInfo> imports() {
-        List<ImportInfo> result = new ArrayList<>();
+        return importDirectives().stream().map(ImportDirective::info).toList();
+    }
+
+    @NotNull
+    public List<ImportDirective> importDirectives() {
+        List<ImportDirective> result = new ArrayList<>();
         for (JtePsiImport importElement : PsiTreeUtil.findChildrenOfType(templateFile, JtePsiImport.class)) {
             JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(importElement, JtePsiJavaInjection.class);
             if (injection == null) {
@@ -99,7 +104,7 @@ public final class KteKotlinImportResolver {
 
             String importText = injection.getText().trim();
             if (!importText.isEmpty()) {
-                result.add(parseImport(importText));
+                result.add(new ImportDirective(injection, parseImport(importText)));
             }
         }
 
@@ -339,6 +344,9 @@ public final class KteKotlinImportResolver {
     }
 
     public record ImportCandidate(@NotNull String qualifiedName, @Nullable PsiElement element) {
+    }
+
+    public record ImportDirective(@NotNull JtePsiJavaInjection source, @NotNull ImportInfo info) {
     }
 
     public record ImportInfo(@NotNull String text,

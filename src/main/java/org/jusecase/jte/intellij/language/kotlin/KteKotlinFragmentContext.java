@@ -19,7 +19,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 import org.jusecase.jte.intellij.language.template.KteKotlinImportResolver;
 import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
-import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
+import org.jusecase.jte.intellij.language.template.KteTemplateSourceFacts;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,23 +52,17 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
 
     @NotNull
     static KteKotlinFragmentContext from(@NotNull KtePsiJavaContent host) {
+        KteTemplateSourceFacts facts = KteTemplateSourceFacts.from(host.getContainingFile());
+        if (facts == null) {
+            throw new IllegalStateException("KTE completion host has no source facts");
+        }
         return new KteKotlinFragmentContext(
-                parameters(host),
-                importPrefix(host),
+                parameters(facts),
+                importPrefix(facts),
                 contextModule(host),
                 host,
                 places(host)
         );
-    }
-
-    @NotNull
-    String prefix(@NotNull KteKotlinFragmentPlace place) {
-        return scaffolding(place).prefix();
-    }
-
-    @NotNull
-    String suffix(@NotNull KteKotlinFragmentPlace place) {
-        return scaffolding(place).suffix();
     }
 
     @NotNull
@@ -90,36 +84,26 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
         return new Scaffolding(result.toString(), suffix.toString());
     }
 
-    @Nullable
-    KteKotlinFragmentPlace placeFor(@NotNull JtePsiJavaInjection injection) {
-        for (KteKotlinFragmentPlace place : places) {
-            if (place.injection() == injection || place.injection().getTextRange().equals(injection.getTextRange())) {
-                return place;
-            }
-        }
-        return null;
-    }
-
     record Scaffolding(@NotNull String prefix, @NotNull String suffix) {
     }
 
     @NotNull
-    private static Map<String, String> parameters(@NotNull KtePsiJavaContent host) {
+    private static Map<String, String> parameters(@NotNull KteTemplateSourceFacts facts) {
         Map<String, String> result = new LinkedHashMap<>();
-        KteKotlinImportResolver importResolver = new KteKotlinImportResolver(host.getContainingFile());
-        for (KteTemplateSignatureSource.Parameter parameter :
-                KteTemplateSignatureSource.resolve(host.getContainingFile()).parameters()) {
+        KteKotlinImportResolver importResolver = new KteKotlinImportResolver(facts.file());
+        for (var parameter : facts.signature().parameters()) {
             result.put(parameter.name(), qualifyType(parameter.typeText(), importResolver));
         }
         return result;
     }
 
     @NotNull
-    private static String importPrefix(@NotNull KtePsiJavaContent host) {
+    private static String importPrefix(@NotNull KteTemplateSourceFacts facts) {
         StringBuilder result = new StringBuilder();
         Set<String> declaredNames = new HashSet<>();
-        KteKotlinImportResolver importResolver = new KteKotlinImportResolver(host.getContainingFile());
-        for (KteKotlinImportResolver.ImportInfo importInfo : importResolver.imports()) {
+        KteKotlinImportResolver importResolver = new KteKotlinImportResolver(facts.file());
+        for (var directive : facts.imports()) {
+            KteKotlinImportResolver.ImportInfo importInfo = directive.info();
             if (importInfo.star() || !IDENTIFIER.matcher(importInfo.visibleName()).matches() ||
                     !declaredNames.add(importInfo.visibleName())) {
                 continue;

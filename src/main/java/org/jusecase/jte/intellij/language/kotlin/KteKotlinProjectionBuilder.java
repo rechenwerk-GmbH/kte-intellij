@@ -10,6 +10,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.psi.*;
+import org.jusecase.jte.intellij.language.template.KteTemplateSourceFacts;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
 
@@ -25,12 +26,12 @@ public final class KteKotlinProjectionBuilder {
 
     @NotNull
     public KteKotlinProjection build(@NotNull PsiFile templateFile) {
-        KtePsiJavaContent host = PsiTreeUtil.findChildOfType(templateFile, KtePsiJavaContent.class);
-        if (host == null) {
+        KteTemplateSourceFacts facts = KteTemplateSourceFacts.from(templateFile);
+        if (facts == null) {
             return new KteKotlinProjection(syntheticFileName(templateFile), "", List.of());
         }
 
-        Builder builder = new Builder(templateFile, host);
+        Builder builder = new Builder(facts);
         return builder.build();
     }
 
@@ -44,11 +45,10 @@ public final class KteKotlinProjectionBuilder {
     }
 
     private static final class Builder {
+        private final KteTemplateSourceFacts facts;
         private final PsiFile templateFile;
         private final KtePsiJavaContent host;
-        private final StringBuilder text = new StringBuilder();
-        private final List<KteKotlinSourceMapping> mappings = new ArrayList<>();
-        private final List<KteKotlinProjection.GeneratedCall> generatedCalls = new ArrayList<>();
+        private final KteKotlinProjectionWriter writer;
         private final Map<String, TemplateStub> templateStubs = new LinkedHashMap<>();
         private final Set<String> generatedNames = new HashSet<>();
         private final KteKotlinTypeRenderer typeRenderer;
@@ -57,17 +57,19 @@ public final class KteKotlinProjectionBuilder {
         private final String fallbackCallName;
         private int forElseCounter;
 
-        private Builder(PsiFile templateFile, KtePsiJavaContent host) {
-            this.templateFile = templateFile;
-            this.host = host;
+        private Builder(KteTemplateSourceFacts facts) {
+            this.facts = facts;
+            this.templateFile = facts.file();
+            this.host = facts.host();
+            this.writer = new KteKotlinProjectionWriter(facts.sourceText(), COMPLETION_DUMMY_IDENTIFIER);
             this.typeRenderer = new KteKotlinTypeRenderer(templateFile);
-            this.sourceSignature = KteTemplateSignatureSource.resolve(templateFile);
+            this.sourceSignature = facts.signature();
             this.className = uniqueName("DummyTemplate");
             this.fallbackCallName = uniqueName("dummyCall");
         }
 
         private KteKotlinProjection build() {
-            List<JtePsiParam> params = directChildren(JtePsiParam.class);
+            List<JtePsiParam> params = facts.parameters();
 
             appendImports();
             collectTemplateStubs();
@@ -84,24 +86,12 @@ public final class KteKotlinProjectionBuilder {
                 appendGenerated("\n}\nfun " + fallbackCallName + "(vararg o: Any?) { o.hashCode() }\n}\n");
             }
 
-            String sourceText = templateFile.getText();
-            String kotlinText = text.toString();
-            for (KteKotlinSourceMapping mapping : mappings) {
-                TextRange sourceRange = mapping.getTemplateRange();
-                TextRange kotlinRange = mapping.getKotlinRange();
-                if (sourceRange.getEndOffset() > sourceText.length() ||
-                        !sourceText.regionMatches(sourceRange.getStartOffset(), kotlinText,
-                                kotlinRange.getStartOffset(), sourceRange.getLength())) {
-                    throw new IllegalStateException("Projection copied text differs from its KTE source range");
-                }
-            }
-            return new KteKotlinProjection(syntheticFileName(templateFile), kotlinText, mappings, generatedCalls);
+            return writer.finish(syntheticFileName(templateFile));
         }
 
         private void appendImports() {
-            for (JtePsiImport importElement : directChildren(JtePsiImport.class)) {
-                JtePsiJavaInjection part = PsiTreeUtil.getChildOfType(importElement, JtePsiJavaInjection.class);
-                appendMappedPart("import ", "\n", part, KteKotlinSourceMapping.Kind.IMPORT);
+            for (var directive : facts.imports()) {
+                appendMappedPart("import ", "\n", directive.source(), KteKotlinSourceMapping.Kind.IMPORT);
             }
         }
 
@@ -226,13 +216,13 @@ public final class KteKotlinProjectionBuilder {
                 return;
             }
 
-            appendTemplateCallTarget(template, stub.functionName());
+            appendTemplateCallTarget(stub.functionName());
             appendGenerated("(");
             for (PsiElement element : template.getChildren()) {
                 if (element instanceof KtePsiParamName paramName) {
                     String name = paramName.getName();
                     if (name != null && !name.isBlank()) {
-                        appendMappedGenerated(name, paramName.getTextRange(),
+                        writer.appendCopiedText(name, paramName.getTextRange(),
                                 KteKotlinSourceMapping.Kind.TEMPLATE_ARGUMENT_NAME);
                         appendGenerated(" = ");
                     }
@@ -247,32 +237,10 @@ public final class KteKotlinProjectionBuilder {
             appendGenerated(")\n");
         }
 
-        private void appendMappedGenerated(@NotNull String generatedText,
-                                           @NotNull TextRange templateRange,
-                                           @NotNull KteKotlinSourceMapping.Kind kind) {
-            int kotlinStartOffset = text.length();
-            appendGenerated(generatedText);
-            if (generatedText.length() == templateRange.getLength() &&
-                    generatedText.equals(templateFile.getText().substring(
-                            templateRange.getStartOffset(), templateRange.getEndOffset()))) {
-                mappings.add(new KteKotlinSourceMapping(
-                        kind,
-                        templateRange,
-                        TextRange.from(kotlinStartOffset, generatedText.length())
-                ));
-            }
-        }
-
-        private void appendTemplateCallTarget(@NotNull JtePsiTemplate template, @NotNull String functionName) {
+        private void appendTemplateCallTarget(@NotNull String functionName) {
             // A generated function name is a semantic stand-in, not a copy of the @template path.
             // Mapping a shared prefix here would make navigation and edits target unrelated text.
-            int kotlinStartOffset = text.length();
             appendGenerated(functionName);
-            JtePsiTemplateName templateName = JtePsiUtil.getLastChildOfType(template, JtePsiTemplateName.class);
-            if (templateName != null && !templateName.getTextRange().isEmpty()) {
-                generatedCalls.add(new KteKotlinProjection.GeneratedCall(
-                        TextRange.from(kotlinStartOffset, functionName.length()), templateName.getTextRange()));
-            }
         }
 
         @Nullable
@@ -318,7 +286,7 @@ public final class KteKotlinProjectionBuilder {
         private String uniqueName(@NotNull String base) {
             String result = base;
             int suffix = 0;
-            while (templateFile.getText().contains(result) || !generatedNames.add(result)) {
+            while (facts.sourceText().contains(result) || !generatedNames.add(result)) {
                 result = base + "_" + ++suffix;
             }
             return result;
@@ -454,18 +422,11 @@ public final class KteKotlinProjectionBuilder {
         }
 
         private void appendMappedPart(String prefix, String suffix, JtePsiJavaInjection part, KteKotlinSourceMapping.Kind kind) {
-            if (part == null) {
-                return;
-            }
-
-            appendMappedPartRange(prefix, suffix, part, kind, 0, part.getTextLength());
+            writer.appendMappedPart(prefix, suffix, part, kind);
         }
 
         private void appendTrimmedMappedPart(String prefix, String suffix, JtePsiJavaInjection part, KteKotlinSourceMapping.Kind kind) {
-            String partText = part.getText();
-            int startOffset = skipWhitespace(partText, 0);
-            int endOffset = trimEnd(partText, partText.length());
-            appendMappedPartRange(prefix, suffix, part, kind, startOffset, endOffset);
+            writer.appendTrimmedMappedPart(prefix, suffix, part, kind);
         }
 
         private void appendMappedPartRange(String prefix,
@@ -474,37 +435,7 @@ public final class KteKotlinProjectionBuilder {
                                            KteKotlinSourceMapping.Kind kind,
                                            int partStartOffset,
                                            int partEndOffset) {
-            if (partStartOffset >= partEndOffset) {
-                return;
-            }
-
-            appendGenerated(prefix);
-            int kotlinStartOffset = text.length();
-            String mappedText = normalizedMappedText(part.getText(), partStartOffset, partEndOffset);
-            if (mappedText.isEmpty()) {
-                return;
-            }
-
-            text.append(mappedText);
-            TextRange kotlinRange = new TextRange(kotlinStartOffset, text.length());
-            TextRange templateRange = new TextRange(
-                    part.getTextRange().getStartOffset() + partStartOffset,
-                    part.getTextRange().getStartOffset() + partStartOffset + mappedText.length()
-            );
-            mappings.add(new KteKotlinSourceMapping(kind, templateRange, kotlinRange));
-            appendGenerated(suffix);
-        }
-
-        @NotNull
-        private String normalizedMappedText(@NotNull String partText, int partStartOffset, int partEndOffset) {
-            String mappedText = partText.substring(partStartOffset, partEndOffset);
-            int dummyOffset = mappedText.indexOf(COMPLETION_DUMMY_IDENTIFIER);
-            if (dummyOffset < 0) {
-                return mappedText;
-            }
-
-            int dummyEndOffset = dummyOffset + COMPLETION_DUMMY_IDENTIFIER.length();
-            return mappedText.substring(0, Math.min(dummyEndOffset, mappedText.length()));
+            writer.appendMappedPartRange(prefix, suffix, part, kind, partStartOffset, partEndOffset);
         }
 
         private boolean hasCompletionRecoveryCommaAfter(@NotNull PsiElement element) {
@@ -531,9 +462,7 @@ public final class KteKotlinProjectionBuilder {
         }
 
         private void appendGenerated(String generatedText) {
-            if (generatedText != null) {
-                text.append(generatedText);
-            }
+            writer.appendGenerated(generatedText);
         }
 
         private boolean hasSupportedBody(PsiElement element) {
@@ -565,35 +494,6 @@ public final class KteKotlinProjectionBuilder {
             }
 
             return KteKotlinSourceMapping.Kind.OUTPUT_EXPRESSION;
-        }
-
-        private int skipWhitespace(@NotNull String value, int offset) {
-            int result = offset;
-            while (result < value.length() && Character.isWhitespace(value.charAt(result))) {
-                result++;
-            }
-
-            return result;
-        }
-
-        private int trimEnd(@NotNull String value, int endOffset) {
-            int result = endOffset;
-            while (result > 0 && Character.isWhitespace(value.charAt(result - 1))) {
-                result--;
-            }
-
-            return result;
-        }
-
-        private <T extends PsiElement> List<T> directChildren(Class<T> childType) {
-            List<T> result = new ArrayList<>();
-            for (PsiElement child : host.getChildren()) {
-                if (childType.isInstance(child)) {
-                    result.add(childType.cast(child));
-                }
-            }
-
-            return result;
         }
 
         private record ForBody(@NotNull List<PsiElement> loopElements, @NotNull List<PsiElement> elseElements) {

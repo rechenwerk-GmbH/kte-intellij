@@ -31,3 +31,8 @@ Generated Kotlin scaffolding cannot produce a source edit or visible diagnostic.
 
 Template structure and required argument checks remain KTE-specific. Kotlin
 completion continues to use a scoped injected fragment at the caret.
+
+The in-memory model uses JTE's common output and content interfaces. JTE HTML
+mode generates narrower HTML interfaces, so mode-specific Kotlin may receive
+different diagnostics. See [the model notes](docs/KTE_KOTLIN_MODEL.md) for the
+architecture, verification commands, and manual editor checks.
