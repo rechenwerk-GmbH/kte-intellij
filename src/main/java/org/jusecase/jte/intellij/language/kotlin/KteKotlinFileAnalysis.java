@@ -45,8 +45,7 @@ import java.util.regex.Pattern;
 final class KteKotlinFileAnalysis {
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Set<String> SOURCE_OWNED_FACTORIES = Set.of(
-            "NO_VALUE_FOR_PARAMETER", "NAMED_PARAMETER_NOT_FOUND", "ARGUMENT_PASSED_TWICE",
-            "TOO_MANY_ARGUMENTS", "MIXING_NAMED_AND_POSITIONED_ARGUMENTS", "UNUSED_IMPORT"
+            "NO_VALUE_FOR_PARAMETER", "ARGUMENT_PASSED_TWICE", "UNUSED_IMPORT"
     );
 
     @NotNull

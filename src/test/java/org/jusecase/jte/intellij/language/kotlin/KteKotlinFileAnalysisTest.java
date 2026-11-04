@@ -1,9 +1,12 @@
 package org.jusecase.jte.intellij.language.kotlin;
 
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiErrorElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jusecase.jte.intellij.language.KtePluginFixtureSupport;
 
@@ -93,6 +96,57 @@ public class KteKotlinFileAnalysisTest extends KtePluginFixtureSupport {
                 diagnostic.range().intersects(sourceRange(source, "42")) &&
                         (diagnostic.factoryName().contains("MISMATCH") ||
                                 diagnostic.factoryName().contains("APPLICABLE"))));
+    }
+
+    public void testUnknownNamedAndExcessPositionalTemplateArgumentsAreReported() {
+        addTemplateRoot();
+        myFixture.addFileToProject("components/card.kte", "@param title: String\n");
+        String source = """
+                @template.components.card(unknown = "Title")
+                @template.components.card("Title", "Extra")
+                """;
+        myFixture.configureByText("calls.kte", source);
+
+        KteKotlinFileAnalysis.Result result = analyze();
+        assertTrue(result.diagnostics().toString(), result.diagnostics().stream().anyMatch(diagnostic ->
+                diagnostic.range().intersects(sourceRange(source, "unknown")) &&
+                        diagnostic.severity() == HighlightSeverity.ERROR));
+        assertTrue(result.diagnostics().toString(), result.diagnostics().stream().anyMatch(diagnostic ->
+                diagnostic.range().intersects(sourceRange(source, "\"Extra\"")) &&
+                        diagnostic.severity() == HighlightSeverity.ERROR));
+    }
+
+    public void testExternalKotlinEditUpdatesAnalysisWithoutRebuildingProjection() {
+        PsiFile modelSource = myFixture.addFileToProject("src/com/example/Holder.kt", """
+                package com.example
+                class Holder(val value: String)
+                """);
+        String source = """
+                @import com.example.Holder
+                @param holder: Holder
+                ${holder.value}
+                """;
+        myFixture.configureByText("external.kte", source);
+
+        KteKotlinModelService service = KteKotlinModelService.getInstance(getProject());
+        KteKotlinModelService.Model model = service.getModel(myFixture.getFile());
+        KteKotlinFileAnalysis.Result before = analyze();
+        assertFalse(before.diagnostics().toString(), before.diagnostics().stream().anyMatch(diagnostic ->
+                diagnostic.range().intersects(sourceRange(source, "value")) &&
+                        diagnostic.factoryName().contains("UNRESOLVED")));
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () -> {
+            var document = PsiDocumentManager.getInstance(getProject()).getDocument(modelSource);
+            assertNotNull(document);
+            document.setText("package com.example\nclass Holder(val renamed: String)\n");
+            PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+        });
+
+        assertSame(model, service.getModel(myFixture.getFile()));
+        KteKotlinFileAnalysis.Result after = analyze();
+        assertTrue(after.diagnostics().toString(), after.diagnostics().stream().anyMatch(diagnostic ->
+                diagnostic.range().intersects(sourceRange(source, "value")) &&
+                        diagnostic.factoryName().contains("UNRESOLVED")));
     }
 
     public void testSemanticColorsDistinguishFunctionsObjectsAndLocals() {
