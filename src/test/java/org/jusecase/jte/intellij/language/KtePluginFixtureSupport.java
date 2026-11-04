@@ -165,6 +165,21 @@ public abstract class KtePluginFixtureSupport extends LightJavaCodeInsightFixtur
                 """);
     }
 
+    protected void addActualJteRuntimeToModule() {
+        String classResource = gg.jte.TemplateOutput.class.getResource("TemplateOutput.class").toExternalForm();
+        int archiveEnd = classResource.indexOf("!/");
+        if (!classResource.startsWith("jar:") || archiveEnd < 0) {
+            throw new IllegalStateException("Cannot locate actual jte runtime JAR: " + classResource);
+        }
+        Path runtimeJar = Path.of(java.net.URI.create(classResource.substring("jar:".length(), archiveEnd)));
+        PsiTestUtil.addLibrary(
+                myFixture.getModule(),
+                "jte-runtime",
+                runtimeJar.getParent().toString(),
+                runtimeJar.getFileName().toString()
+        );
+    }
+
     protected void addNestedObjectAndExtensionFixture() {
         myFixture.addFileToProject("src/com/example/navigation/breadcrumb/Breadcrumb.kt", """
                 package com.example.navigation.breadcrumb

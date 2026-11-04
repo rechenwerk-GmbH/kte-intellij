@@ -19,6 +19,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiTemplate;
 import org.jusecase.jte.intellij.language.psi.KtePsiJavaContent;
 import org.jusecase.jte.intellij.language.template.KteKotlinImportResolver;
 import org.jusecase.jte.intellij.language.template.KteKotlinTypeText;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,8 +41,6 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
         places = List.copyOf(places);
     }
 
-    private static final Pattern KOTLIN_PARAMETER =
-            Pattern.compile("^\\s*(?:vararg\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*([^=]+?)(?:\\s*=.*)?$");
     private static final Pattern TYPE_REFERENCE = Pattern.compile("[A-Za-z_][A-Za-z0-9_.]*");
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final List<String> KNOWN_TYPE_NAMES = List.of(
@@ -108,16 +107,9 @@ record KteKotlinFragmentContext(@NotNull Map<String, String> parameters,
     private static Map<String, String> parameters(@NotNull KtePsiJavaContent host) {
         Map<String, String> result = new LinkedHashMap<>();
         KteKotlinImportResolver importResolver = new KteKotlinImportResolver(host.getContainingFile());
-        for (JtePsiParam param : PsiTreeUtil.findChildrenOfType(host, JtePsiParam.class)) {
-            JtePsiJavaInjection declaration = PsiTreeUtil.getChildOfType(param, JtePsiJavaInjection.class);
-            if (declaration == null) {
-                continue;
-            }
-
-            Matcher matcher = KOTLIN_PARAMETER.matcher(declaration.getText());
-            if (matcher.matches()) {
-                result.put(matcher.group(1), qualifyType(matcher.group(2).trim(), importResolver));
-            }
+        for (KteTemplateSignatureSource.Parameter parameter :
+                KteTemplateSignatureSource.resolve(host.getContainingFile()).parameters()) {
+            result.put(parameter.name(), qualifyType(parameter.typeText(), importResolver));
         }
         return result;
     }

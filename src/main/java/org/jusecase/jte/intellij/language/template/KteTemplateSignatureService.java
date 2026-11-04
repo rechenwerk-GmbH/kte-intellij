@@ -10,7 +10,7 @@ import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiModificationTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jusecase.jte.intellij.language.kotlin.KteKotlinFragmentSemanticService;
+import org.jusecase.jte.intellij.language.kotlin.KteKotlinSemanticService;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public final class KteTemplateSignatureService {
     }
 
     @NotNull
-    static TemplateSignature resolveForSyntheticStub(@NotNull PsiFile templateFile) {
+    public static TemplateSignature resolveForSyntheticStub(@NotNull PsiFile templateFile) {
         PsiFile kteFile = KteTemplateSignatureSource.resolveKteFile(templateFile);
         if (kteFile == null) {
             return TemplateSignature.EMPTY;
@@ -104,8 +104,8 @@ public final class KteTemplateSignatureService {
         }
 
         PsiElement typeElement = importResolver.resolveClass(rawType);
-        KteKotlinFragmentSemanticService.SemanticType semanticType =
-                KteKotlinFragmentSemanticService.typeOfTypeText(sourceElement, sourceTypeText);
+        KteKotlinSemanticService.SemanticType semanticType =
+                KteKotlinSemanticService.typeOfTypeText(sourceElement, sourceTypeText);
         if (!isUsableSemanticType(sourceTypeText, typeElement, semanticType)) {
             semanticType = null;
         }
@@ -119,7 +119,7 @@ public final class KteTemplateSignatureService {
 
     private static boolean isUsableSemanticType(@NotNull String sourceTypeText,
                                                 @Nullable PsiElement typeElement,
-                                                @Nullable KteKotlinFragmentSemanticService.SemanticType semanticType) {
+                                                @Nullable KteKotlinSemanticService.SemanticType semanticType) {
         if (semanticType == null) {
             return false;
         }

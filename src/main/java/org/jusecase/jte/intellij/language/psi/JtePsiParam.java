@@ -34,6 +34,15 @@ public class JtePsiParam extends JtePsiElement implements PsiNamedElement {
     }
 
     @Override
+    public int getTextOffset() {
+        ParamNameRange nameRange = paramNameRange();
+        JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(this, JtePsiJavaInjection.class);
+        return nameRange == null || injection == null
+                ? super.getTextOffset()
+                : injection.getTextRange().getStartOffset() + nameRange.range().getStartOffset();
+    }
+
+    @Override
     public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
         ParamNameRange nameRange = paramNameRange();
         JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(this, JtePsiJavaInjection.class);

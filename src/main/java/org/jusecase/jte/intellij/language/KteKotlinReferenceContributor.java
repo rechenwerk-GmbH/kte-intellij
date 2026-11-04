@@ -19,7 +19,7 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.psi.KtClass;
-import org.jusecase.jte.intellij.language.kotlin.KteKotlinFragmentSemanticService;
+import org.jusecase.jte.intellij.language.kotlin.KteKotlinSemanticService;
 import org.jusecase.jte.intellij.language.KteLanguage;
 import org.jusecase.jte.intellij.language.psi.JtePsiElseIf;
 import org.jusecase.jte.intellij.language.psi.JtePsiFor;
@@ -122,7 +122,7 @@ public class KteKotlinReferenceContributor extends PsiReferenceContributor {
                 return directiveTarget;
             }
 
-            return KteKotlinFragmentSemanticService.resolveReferenceAtTemplateRange(myElement, getRangeInElement());
+            return KteKotlinSemanticService.resolveReferenceAtTemplateRange(myElement, getRangeInElement());
         }
 
         @Nullable
@@ -137,7 +137,7 @@ public class KteKotlinReferenceContributor extends PsiReferenceContributor {
                     return null;
                 }
 
-                PsiElement semanticTarget = KteKotlinFragmentSemanticService.resolveParameterReferenceAtTemplateRange(
+                PsiElement semanticTarget = KteKotlinSemanticService.resolveParameterReferenceAtTemplateRange(
                         myElement, getRangeInElement());
                 if (semanticTarget != null) {
                     return semanticTarget;

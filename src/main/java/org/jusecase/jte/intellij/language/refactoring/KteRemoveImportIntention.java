@@ -9,22 +9,32 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 
 public final class KteRemoveImportIntention implements IntentionAction {
-    private static final String TEXT = "Remove unresolved .kte import";
-
+    private static final String UNRESOLVED_TEXT = "Remove unresolved .kte import";
     private final TextRange importRange;
+    private final String text;
 
     public KteRemoveImportIntention(@NotNull TextRange importRange) {
+        this(importRange, UNRESOLVED_TEXT);
+    }
+
+    @NotNull
+    public static KteRemoveImportIntention unused(@NotNull TextRange importRange) {
+        return new KteRemoveImportIntention(importRange, "Remove unused .kte import");
+    }
+
+    private KteRemoveImportIntention(@NotNull TextRange importRange, @NotNull String text) {
         this.importRange = importRange;
+        this.text = text;
     }
 
     @Override
     public @NotNull String getText() {
-        return TEXT;
+        return text;
     }
 
     @Override
     public @NotNull String getFamilyName() {
-        return TEXT;
+        return text;
     }
 
     @Override

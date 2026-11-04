@@ -40,6 +40,7 @@ dependencies {
     }
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("gg.jte:jte-runtime:3.2.4")
 }
 
 intellijPlatform {

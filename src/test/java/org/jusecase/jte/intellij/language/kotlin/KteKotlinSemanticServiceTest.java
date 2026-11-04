@@ -10,7 +10,7 @@ import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 
 import java.util.Set;
 
-public class KteKotlinFragmentSemanticServiceTest extends KtePluginFixtureSupport {
+public class KteKotlinSemanticServiceTest extends KtePluginFixtureSupport {
     public void testResolvesPropertyReferenceFromScopedFragment() {
         addProfileClassWithKotlinProperties();
 
@@ -99,7 +99,7 @@ public class KteKotlinFragmentSemanticServiceTest extends KtePluginFixtureSuppor
         JtePsiJavaInjection injection = injection(injectionText);
         int offset = injection.getText().indexOf(referenceText);
         assertTrue("Expected reference text '" + referenceText + "' in " + injection.getText(), offset >= 0);
-        return KteKotlinFragmentSemanticService.resolveReferenceAtTemplateRange(
+        return KteKotlinSemanticService.resolveReferenceAtTemplateRange(
                 injection,
                 TextRange.from(offset, referenceText.length())
         );

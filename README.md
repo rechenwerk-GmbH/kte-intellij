@@ -11,8 +11,8 @@ templates remain supported by the original jte plugin.
 - `.kte` file type support
 - Kotlin K2 completion, resolve, references, and documentation
 - Go to Declaration and Quick Documentation for types in `@param` declarations
-- Editor highlighting for unresolved Kotlin references in template code
-- Scoped Kotlin fragments for template-aware Kotlin analysis
+- Source-mapped Kotlin diagnostics and semantic coloring across each template
+- In-memory Kotlin model for analysis, with scoped injection for completion
 - Template parameter validation and selected deterministic quick fixes
 - Formatting, folding, brace matching, live templates, and template navigation
 
@@ -23,11 +23,11 @@ templates remain supported by the original jte plugin.
 
 ## Editor Diagnostics
 
-The editor highlights unresolved Kotlin names in output expressions (`${...}`),
-conditions, loops, statements, and template arguments. Removing an `@param`
-declaration, for example, highlights uses of that parameter in the template;
-restoring the declaration clears the error.
+The editor analyzes a source-mapped, in-memory Kotlin view of the complete
+template. It reports Kotlin syntax, type, nullability, and unresolved-reference
+diagnostics when their ranges map exactly to `.kte` source. It also colors
+resolved Kotlin symbols and warns about unused explicit `@import` directives.
+Generated Kotlin scaffolding cannot produce a source edit or visible diagnostic.
 
-Template structure and template parameter checks are separate features. The
-Kotlin diagnostic integration currently reports unresolved references only;
-other Kotlin compiler errors and warnings are not shown in `.kte` files.
+Template structure and required argument checks remain KTE-specific. Kotlin
+completion continues to use a scoped injected fragment at the caret.

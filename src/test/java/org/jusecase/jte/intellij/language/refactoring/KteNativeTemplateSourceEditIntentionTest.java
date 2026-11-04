@@ -30,6 +30,20 @@ public class KteNativeTemplateSourceEditIntentionTest extends KtePluginFixtureSu
                 """, myFixture.getFile().getText());
     }
 
+    public void testUnusedImportWarningOffersSourceRemoval() {
+        myFixture.addFileToProject("src/com/example/Unused.kt", "package com.example\nclass Unused\n");
+        myFixture.configureByText("unused.kte", """
+                @import com.example.Unu<caret>sed
+                @param title: String
+                ${title}
+                """);
+        assertTrue(warningDescriptions().toString(), warningDescriptions().contains("Unused KTE import"));
+
+        myFixture.launchAction(singleIntention("Remove unused .kte import"));
+
+        assertFalse(myFixture.getFile().getText(), myFixture.getFile().getText().contains("@import"));
+    }
+
     public void testOptimizeImportsUnavailableForSeparatedImportBlocks() {
         addImportTargets();
 

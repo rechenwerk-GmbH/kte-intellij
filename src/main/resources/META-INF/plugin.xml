@@ -10,7 +10,7 @@ Support for Kotlin jte templates (<code>.kte</code>) in IntelliJ IDEA.
 <ul>
     <li><code>.kte</code> file type support.</li>
     <li>Kotlin K2 completion, resolve, references, and documentation.</li>
-    <li>Highlights unresolved Kotlin references and checks template structure and parameters.</li>
+    <li>Highlights source-mapped Kotlin diagnostics and symbols, and checks template structure and parameters.</li>
     <li>Template navigation, formatting, folding, brace matching, and live templates.</li>
 </ul>
 
@@ -107,6 +107,7 @@ Requires IntelliJ IDEA 2026.1 or newer.
         <langCodeStyleSettingsProvider implementation="org.jusecase.jte.intellij.language.format.KteLanguageCodeStyleSettingsProvider"/>
 
         <projectService serviceImplementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinAnalysisContextService"/>
+        <projectService serviceImplementation="org.jusecase.jte.intellij.language.kotlin.KteKotlinModelService"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
