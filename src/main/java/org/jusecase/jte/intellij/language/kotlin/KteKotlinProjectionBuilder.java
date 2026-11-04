@@ -12,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jusecase.jte.intellij.language.psi.*;
 import org.jusecase.jte.intellij.language.template.KteTemplateSourceFacts;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
-import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,7 +52,7 @@ public final class KteKotlinProjectionBuilder {
         private final Map<String, TemplateStub> templateStubs = new LinkedHashMap<>();
         private final Set<String> generatedNames = new HashSet<>();
         private final KteKotlinTypeRenderer typeRenderer;
-        private final KteTemplateSignatureSource.Signature sourceSignature;
+        private final KteTemplateSignatureService.TemplateSignature sourceSignature;
         private final String className;
         private final String fallbackCallName;
         private int forElseCounter;
@@ -146,7 +145,7 @@ public final class KteKotlinProjectionBuilder {
             }
 
             String partText = part.getText();
-            KteTemplateSignatureSource.Parameter sourceParameter = sourceSignature.parameters().stream()
+            KteTemplateSignatureService.Parameter sourceParameter = sourceSignature.parameters().stream()
                     .filter(parameter -> parameter.sourceElement() == param)
                     .findFirst().orElse(null);
             TextRange defaultValueRange = sourceParameter == null ? null : sourceParameter.defaultValueRange();
@@ -257,7 +256,7 @@ public final class KteKotlinProjectionBuilder {
             }
 
             KteTemplateSignatureService.TemplateSignature signature =
-                    KteTemplateSignatureService.resolveForSyntheticStub(targetTemplate);
+                    KteTemplateSignatureService.resolve(targetTemplate);
             String key = templateKey(targetTemplate);
             TemplateStub existing = templateStubs.get(key);
             if (existing != null) {

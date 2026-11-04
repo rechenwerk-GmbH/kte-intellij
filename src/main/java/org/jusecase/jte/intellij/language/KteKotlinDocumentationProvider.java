@@ -123,7 +123,7 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
         if (parameter.vararg()) {
             builder.append("vararg ");
         }
-        builder.append(parameter.name()).append(": ").append(parameter.renderedTypeText());
+        builder.append(parameter.name()).append(": ").append(parameter.typeText());
         if (parameter.defaulted()) {
             builder.append(" = ").append(defaultValueText(parameter));
         }
@@ -368,7 +368,7 @@ public final class KteKotlinDocumentationProvider extends AbstractDocumentationP
                     KteTemplateSignatureService.resolve(target.getContainingFile());
             for (KteTemplateSignatureService.Parameter parameter : signature.parameters()) {
                 if (parameter.sourceElement() == param) {
-                    return parameter.name() + ": " + parameter.renderedTypeText();
+                    return parameter.name() + ": " + parameter.typeText();
                 }
             }
         }

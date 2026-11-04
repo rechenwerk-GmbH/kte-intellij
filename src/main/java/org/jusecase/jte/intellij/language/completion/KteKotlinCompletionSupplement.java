@@ -106,11 +106,14 @@ public final class KteKotlinCompletionSupplement {
 
         KteTemplateSignatureService.Parameter parameter =
                 KteTemplateSignatureService.resolve(templateFile).parameter(receiverText);
-        if (parameter == null || parameter.typeClass() == null) {
+        if (parameter == null) {
             return;
         }
 
-        addPsiClassMembers(result, parameter.typeClass());
+        PsiClass typeClass = new KteKotlinImportResolver(templateFile).resolveClass(parameter.rawType());
+        if (typeClass != null) {
+            addPsiClassMembers(result, typeClass);
+        }
     }
 
     private void addKotlinObjectMembers(@NotNull Map<String, CompletionCandidate> result,

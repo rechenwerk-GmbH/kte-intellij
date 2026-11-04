@@ -16,7 +16,7 @@ public record KteTemplateSourceFacts(@NotNull PsiFile file,
                                      @NotNull KtePsiJavaContent host,
                                      @NotNull String sourceText,
                                      @NotNull List<KteKotlinImportResolver.ImportDirective> imports,
-                                     @NotNull KteTemplateSignatureSource.Signature signature,
+                                     @NotNull KteTemplateSignatureService.TemplateSignature signature,
                                      @NotNull List<JtePsiParam> parameters) {
     public KteTemplateSourceFacts {
         imports = List.copyOf(imports);
@@ -41,7 +41,7 @@ public record KteTemplateSourceFacts(@NotNull PsiFile file,
                 host,
                 file.getText(),
                 new KteKotlinImportResolver(file).importDirectives(),
-                KteTemplateSignatureSource.resolve(file),
+                KteTemplateSignatureService.resolve(file),
                 parameters
         );
     }

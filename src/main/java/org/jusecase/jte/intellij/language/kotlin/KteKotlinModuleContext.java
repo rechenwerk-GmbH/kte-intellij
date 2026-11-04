@@ -46,6 +46,7 @@ final class KteKotlinModuleContext {
     @Nullable
     @SuppressWarnings("unchecked")
     static Key<KaModule> contextModuleUserDataKey() {
+        // The Kotlin plugin creates CONTEXT_MODULE in this class initializer.
         try {
             Class.forName(DanglingFilesKt.class.getName(), true, DanglingFilesKt.class.getClassLoader());
         } catch (ClassNotFoundException ignored) {

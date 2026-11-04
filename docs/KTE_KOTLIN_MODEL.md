@@ -13,6 +13,8 @@ The `.kte` PSI and document own edits. Kotlin PSI is an analysis view and is nev
 
 `KteTemplateSourceFacts` supplies imports and parameter declarations to the whole-template builder and completion context. The two Kotlin representations intentionally differ in size: the whole file preserves scopes across directives, while the injected fragment gives IntelliJ's completion pipeline a Kotlin file at the caret. They must agree on imports, parameters, and visible locals.
 
+`KteTemplateSignatureService` caches only declarations from the template file. Hover documentation displays the declared type text; contract checks, references, and completion do not create separate Kotlin type probes while reading a signature.
+
 ## Projection rules
 
 - A source mapping covers only text copied exactly from `.kte` to the in-memory Kotlin file. Generated names, wrapper code, and synthetic child-template stubs have no source mapping.

@@ -48,7 +48,7 @@ public class KteKotlinDocumentationProviderTest extends KtePluginFixtureSupport 
         assertEquals("profile: Profile", info);
     }
 
-    public void testQuickNavigateInfoForNullableTemplateParamUsesK2RenderedSignatureType() {
+    public void testQuickNavigateInfoForNullableTemplateParamShowsDeclaredType() {
         addProfileClass();
 
         myFixture.configureByText("profile.kte", """
@@ -60,6 +60,29 @@ public class KteKotlinDocumentationProviderTest extends KtePluginFixtureSupport 
         String info = quickNavigateInfoAtCaret();
 
         assertEquals("profile: Profile?", info);
+    }
+
+    public void testQuickNavigateInfoPreservesImportedTypeAlias() {
+        addProfileClass();
+
+        myFixture.configureByText("profile.kte", """
+                @import com.example.Profile as Person
+                @param profile: Person?
+                ${pro<caret>file?.displayName}
+                """);
+
+        assertEquals("profile: Person?", quickNavigateInfoAtCaret());
+    }
+
+    public void testTemplateDocumentationKeepsUnknownSourceType() {
+        addTemplateRoot();
+        myFixture.addFileToProject("components/broken.kte", "@param profile: MissingProfile\n");
+        myFixture.configureByText("parent.kte", "@template.components.bro<caret>ken(profile = null)\n");
+
+        String info = quickNavigateInfoAtCaret();
+
+        assertNotNull(info);
+        assertTrue(info, info.contains("profile: MissingProfile"));
     }
 
     public void testKotlinPropertyDocumentationFallsBackToPlatformProvider() {

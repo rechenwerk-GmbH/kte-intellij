@@ -12,7 +12,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jusecase.jte.intellij.language.psi.JtePsiTemplateName;
-import org.jusecase.jte.intellij.language.template.KteTemplateSignatureSource;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public final class KteKotlinModelService {
 
     @NotNull
     public Model getModel(@NotNull PsiFile templateFile) {
-        PsiFile kteFile = KteTemplateSignatureSource.resolveKteFile(templateFile);
+        PsiFile kteFile = KteTemplateSignatureService.resolveKteFile(templateFile);
         if (kteFile == null) {
             throw new IllegalArgumentException("Expected a KTE template file");
         }

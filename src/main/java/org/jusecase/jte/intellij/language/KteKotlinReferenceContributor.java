@@ -131,7 +131,7 @@ public class KteKotlinReferenceContributor extends PsiReferenceContributor {
                     return null;
                 }
 
-                PsiElement semanticTarget = KteKotlinSemanticService.resolveParameterReferenceAtTemplateRange(
+                PsiElement semanticTarget = KteKotlinSemanticService.resolveReferenceAtTemplateRange(
                         myElement, getRangeInElement());
                 if (semanticTarget != null) {
                     return semanticTarget;

@@ -11,59 +11,25 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.analysis.api.AnalyzeKt;
-import org.jetbrains.kotlin.analysis.api.KaSession;
-import org.jetbrains.kotlin.analysis.api.renderer.types.impl.KaTypeRendererForSource;
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol;
-import org.jetbrains.kotlin.analysis.api.types.KaType;
 import org.jetbrains.kotlin.idea.references.KtReference;
-import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtNamedDeclaration;
 import org.jetbrains.kotlin.psi.KtParameter;
-import org.jetbrains.kotlin.psi.KtProperty;
-import org.jetbrains.kotlin.types.Variance;
-import org.jusecase.jte.intellij.language.psi.JtePsiImport;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
 import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 import java.util.Collection;
 
-/** Resolves .kte references through the shared Kotlin model. Type probes avoid recursive model construction. */
+/** Resolves .kte references through the shared Kotlin model. */
 public final class KteKotlinSemanticService {
     private static final Logger LOG = Logger.getInstance(KteKotlinSemanticService.class);
     private KteKotlinSemanticService() {
     }
 
     @Nullable
-    public static SemanticType typeOfTypeText(@NotNull PsiElement sourceElement, @NotNull String typeText) {
-        PsiFile templateFile = sourceElement.getContainingFile();
-        if (templateFile == null || typeText.isBlank()) {
-            return null;
-        }
-
-        String propertyName = "__kte_type_probe";
-        KtFile ktFile = KteKotlinScratchFileFactory.createKtFile(
-                templateFile,
-                templateFile.getName() + ".type-fragment.kt",
-                importPrefix(templateFile) +
-                        "@Suppress(\"unused\")\n" +
-                        "val " + propertyName + " = null as " + typeText + "\n"
-        );
-
-        KtProperty property = property(ktFile, propertyName);
-        KtExpression initializer = property == null ? null : property.getInitializer();
-        return initializer == null ? null : expressionType(ktFile, initializer);
-    }
-
-    @Nullable
     public static PsiElement resolveReferenceAtTemplateRange(@NotNull JtePsiJavaInjection injection,
                                                                @NotNull TextRange rangeInElement) {
-        return resolveModelReference(injection, rangeInElement);
-    }
-
-    @Nullable
-    public static PsiElement resolveParameterReferenceAtTemplateRange(@NotNull JtePsiJavaInjection injection,
-                                                                        @NotNull TextRange rangeInElement) {
         return resolveModelReference(injection, rangeInElement);
     }
 
@@ -136,18 +102,6 @@ public final class KteKotlinSemanticService {
         return range == null ? null : sourceFile.findElementAt(range.getStartOffset());
     }
 
-    @NotNull
-    private static String importPrefix(@NotNull PsiFile templateFile) {
-        StringBuilder result = new StringBuilder();
-        for (JtePsiImport importElement : PsiTreeUtil.findChildrenOfType(templateFile, JtePsiImport.class)) {
-            JtePsiJavaInjection injection = PsiTreeUtil.getChildOfType(importElement, JtePsiJavaInjection.class);
-            if (injection != null && !injection.getText().isBlank()) {
-                result.append("import ").append(injection.getText().trim()).append('\n');
-            }
-        }
-        return result.toString();
-    }
-
     @Nullable
     private static PsiReference findReference(@NotNull KtFile ktFile, int kotlinOffset) {
         PsiElement leaf = ktFile.findElementAt(kotlinOffset);
@@ -168,63 +122,16 @@ public final class KteKotlinSemanticService {
             return reference.resolve();
         }
 
-        try {
-            return AnalyzeKt.analyze(ktFile, session -> {
-                Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
-                for (KaSymbol symbol : symbols) {
-                    PsiElement target = symbol.getPsi();
-                    if (target != null) {
-                        return target;
-                    }
+        return AnalyzeKt.analyze(ktFile, session -> {
+            Collection<KaSymbol> symbols = session.resolveToSymbols(ktReference);
+            for (KaSymbol symbol : symbols) {
+                PsiElement target = symbol.getPsi();
+                if (target != null) {
+                    return target;
                 }
-                return reference.resolve();
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
-        } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
-                throw exception;
             }
-            LOG.warn("Unable to resolve a synthetic Kotlin reference", exception);
-            return null;
-        }
+            return reference.resolve();
+        });
     }
 
-    @Nullable
-    private static KtProperty property(@NotNull KtFile ktFile, @NotNull String name) {
-        for (PsiElement child : ktFile.getChildren()) {
-            if (child instanceof KtProperty property && name.equals(property.getName())) {
-                return property;
-            }
-        }
-        return null;
-    }
-
-    @Nullable
-    private static SemanticType expressionType(@NotNull KtFile ktFile, @NotNull KtExpression expression) {
-        try {
-            return AnalyzeKt.analyze(ktFile, session -> {
-                KaType type = session.getExpressionType(expression);
-                return type == null ? null : semanticType(session, type);
-            });
-        } catch (ProcessCanceledException exception) {
-            throw exception;
-        } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
-                throw exception;
-            }
-            LOG.warn("Unable to analyze a KTE parameter type", exception);
-            return null;
-        }
-    }
-
-    @NotNull
-    private static SemanticType semanticType(@NotNull KaSession session, @NotNull KaType type) {
-        String shortType = session.render(type, KaTypeRendererForSource.INSTANCE.getWITH_SHORT_NAMES(), Variance.INVARIANT);
-        String qualifiedType = session.render(type, KaTypeRendererForSource.INSTANCE.getWITH_QUALIFIED_NAMES(), Variance.INVARIANT);
-        return new SemanticType(shortType, qualifiedType);
-    }
-
-    public record SemanticType(@NotNull String typeText, @NotNull String qualifiedTypeText) {
-    }
 }
