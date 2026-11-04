@@ -55,6 +55,7 @@ final class KteTemplateContractDiagnosticChecker {
             String argumentName = argument.name();
             if (argumentName != null && !argument.hasAssignment()) {
                 add(result, seen,
+                        "MISSING_ASSIGNMENT",
                         "Missing parameter assignment",
                         argument.range(),
                         List.of(new KteInsertMissingAssignmentIntention(
@@ -66,6 +67,7 @@ final class KteTemplateContractDiagnosticChecker {
             if (argumentName != null) {
                 if (namedArguments.putIfAbsent(argumentName, argument) != null) {
                     add(result, seen,
+                            "DUPLICATE_ARGUMENT",
                             "Duplicate parameter " + argumentName,
                             argument.range(),
                             List.of(new KteRemoveDuplicateTemplateArgumentIntention(argument.argumentRange())));
@@ -76,6 +78,7 @@ final class KteTemplateContractDiagnosticChecker {
         List<String> missingRequiredNames = missingRequiredNames(signature, arguments);
         if (!missingRequiredNames.isEmpty()) {
             add(result, seen,
+                    "MISSING_REQUIRED_ARGUMENT",
                     "Missing required parameters: " + String.join(", ", missingRequiredNames),
                     template.getTextRange(),
                     List.of(new KteAddMissingTemplateArgumentsIntention(template.getTextRange(), missingRequiredNames)));
@@ -108,6 +111,7 @@ final class KteTemplateContractDiagnosticChecker {
 
     private void add(@NotNull List<KteTemplateDiagnostic> result,
                      @NotNull Set<String> seen,
+                     @NotNull String code,
                      @NotNull String message,
                      @NotNull TextRange range,
                      @NotNull List<IntentionAction> fixes) {
@@ -115,6 +119,7 @@ final class KteTemplateContractDiagnosticChecker {
         String key = severity + ":" + message + ":" + range;
         if (seen.add(key)) {
             result.add(new KteTemplateDiagnostic(
+                    code,
                     severity,
                     message,
                     range,

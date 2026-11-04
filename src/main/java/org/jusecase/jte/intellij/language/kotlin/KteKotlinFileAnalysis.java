@@ -42,7 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** One analysis pass for source-mapped Kotlin errors and semantic token colors. */
-final class KteKotlinFileAnalysis {
+public final class KteKotlinFileAnalysis {
     private static final Logger LOG = Logger.getInstance(KteKotlinFileAnalysis.class);
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Set<String> SOURCE_OWNED_FACTORIES = Set.of(
@@ -51,6 +51,17 @@ final class KteKotlinFileAnalysis {
 
     @NotNull
     Result collect(@NotNull PsiFile templateFile) {
+        return collect(templateFile, false);
+    }
+
+    /** Audit entry point: an analysis failure must not be mistaken for a clean file. */
+    @NotNull
+    public static List<Diagnostic> auditDiagnostics(@NotNull PsiFile templateFile) {
+        return new KteKotlinFileAnalysis().collect(templateFile, true).diagnostics();
+    }
+
+    @NotNull
+    private Result collect(@NotNull PsiFile templateFile, boolean failOnError) {
         try {
             KteKotlinModelService.Model model = KteKotlinModelService.getInstance(templateFile.getProject())
                     .getModel(templateFile);
@@ -114,7 +125,7 @@ final class KteKotlinFileAnalysis {
         } catch (ProcessCanceledException exception) {
             throw exception;
         } catch (RuntimeException | LinkageError exception) {
-            if (ApplicationManager.getApplication().isUnitTestMode()) {
+            if (failOnError || ApplicationManager.getApplication().isUnitTestMode()) {
                 throw exception;
             }
             LOG.warn("Unable to analyze KTE Kotlin model", exception);
@@ -236,10 +247,10 @@ final class KteKotlinFileAnalysis {
     record Result(@NotNull List<Diagnostic> diagnostics, @NotNull List<SemanticHighlight> highlights) {
     }
 
-    record Diagnostic(@NotNull HighlightSeverity severity,
-                      @NotNull String message,
-                      @NotNull TextRange range,
-                      @NotNull String factoryName) {
+    public record Diagnostic(@NotNull HighlightSeverity severity,
+                             @NotNull String message,
+                             @NotNull TextRange range,
+                             @NotNull String factoryName) {
     }
 
     record SemanticHighlight(@NotNull TextRange range, @NotNull TextAttributesKey key) {

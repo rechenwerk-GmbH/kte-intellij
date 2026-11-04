@@ -36,3 +36,5 @@ The in-memory model uses JTE's common output and content interfaces. JTE HTML
 mode generates narrower HTML interfaces, so mode-specific Kotlin may receive
 different diagnostics. See [the model notes](docs/KTE_KOTLIN_MODEL.md) for the
 architecture, verification commands, and manual editor checks.
+
+For project-wide diagnostic inventories, see [the KTE audit workflow](docs/KTE_AUDIT.md).
