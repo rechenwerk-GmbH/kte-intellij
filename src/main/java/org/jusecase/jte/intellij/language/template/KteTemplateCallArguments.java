@@ -81,16 +81,56 @@ public final class KteTemplateCallArguments {
             String text = javaInjection.getText();
             int segmentStart = 0;
             boolean insideString = false;
+            boolean insideRawString = false;
+            boolean insideChar = false;
             int parenthesisDepth = 0;
+            int bracketDepth = 0;
+            int braceDepth = 0;
+            int typeArgumentDepth = 0;
             for (int index = 0; index < text.length(); index++) {
                 char current = text.charAt(index);
-                if (current == '"' && (index == 0 || text.charAt(index - 1) != '\\')) {
-                    insideString = !insideString;
-                } else if (!insideString && current == '(') {
+                if (insideRawString) {
+                    if (text.startsWith("\"\"\"", index)) {
+                        insideRawString = false;
+                        index += 2;
+                    }
+                    continue;
+                }
+                if (insideString || insideChar) {
+                    if (current == (insideString ? '"' : '\'') && !isEscaped(text, index)) {
+                        insideString = false;
+                        insideChar = false;
+                    }
+                    continue;
+                }
+                if (text.startsWith("\"\"\"", index)) {
+                    insideRawString = true;
+                    index += 2;
+                    continue;
+                }
+                if (current == '"') {
+                    insideString = true;
+                } else if (current == '\'') {
+                    insideChar = true;
+                } else if (current == '(') {
                     parenthesisDepth++;
-                } else if (!insideString && current == ')' && parenthesisDepth > 0) {
+                } else if (current == ')' && parenthesisDepth > 0) {
                     parenthesisDepth--;
-                } else if (!insideString && current == ',' && parenthesisDepth == 0) {
+                } else if (current == '[') {
+                    bracketDepth++;
+                } else if (current == ']' && bracketDepth > 0) {
+                    bracketDepth--;
+                } else if (current == '{') {
+                    braceDepth++;
+                } else if (current == '}' && braceDepth > 0) {
+                    braceDepth--;
+                } else if (current == '<' &&
+                        (typeArgumentDepth > 0 || startsTypeArguments(text, index))) {
+                    typeArgumentDepth++;
+                } else if (current == '>' && typeArgumentDepth > 0) {
+                    typeArgumentDepth--;
+                } else if (current == ',' && parenthesisDepth == 0 && bracketDepth == 0 &&
+                        braceDepth == 0 && typeArgumentDepth == 0) {
                     addValueSegment(javaInjection, segmentStart, index);
                     flush();
                     segmentStart = index + 1;
@@ -98,6 +138,40 @@ public final class KteTemplateCallArguments {
             }
 
             addValueSegment(javaInjection, segmentStart, text.length());
+        }
+
+        private boolean startsTypeArguments(@NotNull String text, int start) {
+            // A '<' can also be a comparison; require an identifier before it and a plausible
+            // continuation after its matching '>' before treating inner commas as type syntax.
+            if (start == 0 || !Character.isJavaIdentifierPart(text.charAt(start - 1))) {
+                return false;
+            }
+
+            int depth = 1;
+            for (int index = start + 1; index < text.length(); index++) {
+                char current = text.charAt(index);
+                if (current == '<') {
+                    depth++;
+                } else if (current == '>') {
+                    depth--;
+                    if (depth == 0) {
+                        int next = index + 1;
+                        while (next < text.length() && Character.isWhitespace(text.charAt(next))) {
+                            next++;
+                        }
+                        return next == text.length() || "(.?[{:,)".indexOf(text.charAt(next)) >= 0;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean isEscaped(@NotNull String text, int offset) {
+            int backslashes = 0;
+            for (int index = offset - 1; index >= 0 && text.charAt(index) == '\\'; index--) {
+                backslashes++;
+            }
+            return backslashes % 2 != 0;
         }
 
         private void addContent(@NotNull JtePsiContent contentElement) {

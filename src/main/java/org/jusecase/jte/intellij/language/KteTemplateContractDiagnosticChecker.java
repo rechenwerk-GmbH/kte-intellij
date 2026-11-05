@@ -1,7 +1,6 @@
 package org.jusecase.jte.intellij.language;
 
 import com.intellij.codeInsight.intention.IntentionAction;
-import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -111,11 +110,9 @@ final class KteTemplateContractDiagnosticChecker {
                      @NotNull String message,
                      @NotNull TextRange range,
                      @NotNull List<IntentionAction> fixes) {
-        HighlightSeverity severity = HighlightSeverity.ERROR;
-        String key = severity + ":" + message + ":" + range;
+        String key = message + ":" + range;
         if (seen.add(key)) {
             result.add(new KteTemplateDiagnostic(
-                    severity,
                     message,
                     range,
                     fixes

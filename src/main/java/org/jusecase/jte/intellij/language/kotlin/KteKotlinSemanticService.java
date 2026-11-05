@@ -81,9 +81,7 @@ public final class KteKotlinSemanticService {
                 KteTemplateSignatureService.Parameter parameter =
                         KteTemplateSignatureService.resolve(sourceFile).parameter(declaration.getName());
                 if (parameter != null) {
-                    JtePsiJavaInjection sourceParameter = PsiTreeUtil.getChildOfType(
-                            parameter.sourceElement(), JtePsiJavaInjection.class);
-                    return sourceParameter == null ? parameter.sourceElement() : sourceParameter;
+                    return parameter.sourceElement();
                 }
             }
             PsiElement nameIdentifier = declaration.getNameIdentifier();

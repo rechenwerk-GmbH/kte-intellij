@@ -62,7 +62,7 @@ public final class KteTemplateSignatureService {
             }
         }
 
-        return new TemplateSignature(templateFile, parameters);
+        return new TemplateSignature(parameters);
     }
 
     @Nullable
@@ -94,7 +94,6 @@ public final class KteTemplateSignatureService {
                 param,
                 declaration.declarationRange().shiftRight(injectionRange.getStartOffset()),
                 declaration.nameRange().shiftRight(injectionRange.getStartOffset()),
-                declaration.typeRange().shiftRight(injectionRange.getStartOffset()),
                 defaultValueRange
         );
     }
@@ -145,9 +144,8 @@ public final class KteTemplateSignatureService {
         return -1;
     }
 
-    public record TemplateSignature(@Nullable PsiFile templateFile,
-                                    @NotNull List<Parameter> parameters) {
-        public static final TemplateSignature EMPTY = new TemplateSignature(null, List.of());
+    public record TemplateSignature(@NotNull List<Parameter> parameters) {
+        public static final TemplateSignature EMPTY = new TemplateSignature(List.of());
 
         public TemplateSignature {
             parameters = List.copyOf(parameters);
@@ -178,7 +176,6 @@ public final class KteTemplateSignatureService {
                             @NotNull PsiElement sourceElement,
                             @NotNull TextRange declarationRange,
                             @NotNull TextRange nameRange,
-                            @NotNull TextRange typeRange,
                             @Nullable TextRange defaultValueRange) {
     }
 
@@ -187,7 +184,6 @@ public final class KteTemplateSignatureService {
                                     boolean vararg,
                                     @NotNull TextRange declarationRange,
                                     @NotNull TextRange nameRange,
-                                    @NotNull TextRange typeRange,
                                     @Nullable TextRange defaultValueRange) {
         @Nullable
         private static ParamDeclaration parse(@NotNull String text) {
@@ -233,7 +229,6 @@ public final class KteTemplateSignatureService {
                     vararg,
                     TextRange.create(0, defaultValueOffset == -1 ? typeEnd : defaultValueOffset),
                     TextRange.create(nameStart, nameEnd),
-                    TextRange.create(typeStart, typeEnd),
                     defaultValueRange
             );
         }

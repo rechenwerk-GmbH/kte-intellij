@@ -5,8 +5,8 @@ import com.intellij.psi.PsiNamedElement;
 import org.jetbrains.kotlin.psi.KtClass;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
 import org.jetbrains.kotlin.psi.KtTypeAlias;
+import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 
-import java.util.Set;
 
 public class KteKotlinReferenceResolveTest extends KtePluginFixtureSupport {
     public void testParamKotlinStringTypeReferenceNavigatesToStringDeclaration() {
@@ -242,7 +242,8 @@ public class KteKotlinReferenceResolveTest extends KtePluginFixtureSupport {
         PsiElement resolved = resolveReferenceAtCaret();
 
         assertSame(myFixture.getFile(), resolved.getContainingFile());
-        assertTrue(Set.of("profile: Profile", "profile").contains(resolved.getText()));
+        assertTrue(resolved instanceof JtePsiParam);
+        assertEquals("profile", ((JtePsiParam) resolved).getName());
     }
 
     public void testOutputPropertyReferenceResolvesThroughSimpleForLoopVariable() {
@@ -278,7 +279,8 @@ public class KteKotlinReferenceResolveTest extends KtePluginFixtureSupport {
         PsiElement resolved = resolveReferenceAtCaret();
 
         assertSame(myFixture.getFile(), resolved.getContainingFile());
-        assertTrue(Set.of("profile: Profile", "profile").contains(resolved.getText()));
+        assertTrue(resolved instanceof JtePsiParam);
+        assertEquals("profile", ((JtePsiParam) resolved).getName());
     }
 
     public void testTemplatePositionalArgumentPropertyReferenceResolvesToImportedKotlinProperty() {

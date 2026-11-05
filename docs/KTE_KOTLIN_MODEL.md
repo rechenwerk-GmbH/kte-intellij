@@ -33,7 +33,7 @@ The projection uses `gg.jte.TemplateOutput` and `gg.jte.Content`, the common JTE
 
 ## Platform API boundary
 
-`KteKotlinModuleContext` contains the Kotlin module setup and the injected-file context key. The verifier still reports `Key.findKeyByName` as deprecated on all configured IDE versions. On the 263 build, it also reports three `AnalyzeKt.analyze` calls as deprecated. `KteFileViewProvider.getContentElementType` is experimental on all three. These are the remaining platform migration points; keep them behind their current boundaries and check replacements against each supported IDE version before changing them.
+`KteKotlinModuleContext` contains the Kotlin module setup and the injected-file context key. The verifier still reports `Key.findKeyByName` as deprecated on all configured IDE versions. On the 263 build, it also reports two `AnalyzeKt.analyze` calls as deprecated. `KteFileViewProvider.getContentElementType` is experimental on all three. These are the remaining platform migration points; keep them behind their current boundaries and check replacements against each supported IDE version before changing them.
 
 ## Verification
 
@@ -41,12 +41,9 @@ Run these before changing projection or module setup:
 
 ```bash
 ./gradlew check verifyPlugin --no-daemon
-./gradlew test --tests org.jusecase.jte.intellij.language.kotlin.KteHighlightingBenchmarkTest --no-daemon
 ```
 
 The IDE fixture uses a 4 GiB test JVM heap. At 2 GiB, repeated K2 completion tests caused sustained garbage collection and hit IntelliJ's 100-second completion timeout.
-
-The benchmark prints three edit-and-highlight samples for a 200-expression template and completion samples at 50, 50, 200, and 200 expressions. The repeated sizes help distinguish JVM warmup from template-size effects. It has no absolute timing assertion because CI machines vary. Compare samples on the same machine and IDE version, then profile any large regression.
 
 In a real JTE Kotlin project, smoke-test these editor actions in both HTML and Plain configurations:
 
@@ -54,7 +51,7 @@ In a real JTE Kotlin project, smoke-test these editor actions in both HTML and P
 2. Change a Kotlin class used by a template without editing the template; diagnostics and member resolution should refresh.
 3. Try a non-Boolean `@if`, an unsafe nullable access, a wrong child-template value type, an unknown named argument, and an excess positional argument. Errors should land on `.kte` text.
 4. Complete a member inside an output expression and a loop, then apply the completion. The edit should affect only `.kte` source.
-5. Navigate from a later expression to a parameter and an earlier local declaration; inspect Quick Documentation.
+5. Navigate from a later expression to a parameter and an earlier local declaration; inspect Quick Documentation. Run Find Usages and rename on a template parameter.
 6. Check a valid import, an unused explicit import, and its removal intention.
 
 These manual checks complement the fixture tests. The fixture's actual-runtime check validates API signatures and Kotlin syntax, but does not compile the synthetic projection as a full JTE application.

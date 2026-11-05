@@ -3,9 +3,31 @@ package org.jusecase.jte.intellij.language;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.refactoring.rename.RenameProcessor;
 import org.jetbrains.kotlin.psi.KtClass;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 public class KteKotlinReferenceRefactoringTest extends KtePluginFixtureSupport {
+    public void testRenameTemplateParameterUpdatesUsagesInSameFile() {
+        var file = myFixture.configureByText("simple.kte", """
+                @param showBreadcrumb: Boolean
+                @if(showBreadcrumb)
+                    ${showBreadcrumb}
+                @endif
+                """);
+        var parameter = KteTemplateSignatureService.resolve(file).parameter("showBreadcrumb");
+        assertNotNull(parameter);
+
+        new RenameProcessor(getProject(), parameter.sourceElement(), "showCrumb", false, false).run();
+
+        assertEquals("""
+                @param showCrumb: Boolean
+                @if(showCrumb)
+                    ${showCrumb}
+                @endif
+                """, file.getText());
+    }
+
     public void testHandleRenameUpdatesOutputPropertyReference() {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example

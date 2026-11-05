@@ -7,8 +7,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jusecase.jte.intellij.language.psi.JtePsiJavaInjection;
-
-import java.util.Set;
+import org.jusecase.jte.intellij.language.psi.JtePsiParam;
 
 public class KteKotlinSemanticServiceTest extends KtePluginFixtureSupport {
     public void testResolvesPropertyReferenceFromScopedFragment() {
@@ -38,7 +37,8 @@ public class KteKotlinSemanticServiceTest extends KtePluginFixtureSupport {
         PsiElement resolved = resolveInFragment("profile.displayName", "profile");
 
         assertSame(myFixture.getFile(), resolved.getContainingFile());
-        assertTrue(Set.of("profile: Profile", "profile").contains(resolved.getText()));
+        assertTrue(resolved instanceof JtePsiParam);
+        assertEquals("profile", ((JtePsiParam) resolved).getName());
     }
 
     public void testMapsVisibleStatementLocalBackToTemplateStatement() {

@@ -4,6 +4,7 @@ import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +21,7 @@ public final class KteTemplateDiagnosticAnnotator implements Annotator {
 
         PsiFile templateFile = element.getContainingFile();
         for (KteTemplateDiagnostic diagnostic : checker.collect(templateFile)) {
-            AnnotationBuilder builder = holder.newAnnotation(diagnostic.severity(), diagnostic.message())
+            AnnotationBuilder builder = holder.newAnnotation(HighlightSeverity.ERROR, diagnostic.message())
                     .range(diagnostic.range());
             for (IntentionAction fix : diagnostic.fixes()) {
                 builder = builder.withFix(fix);

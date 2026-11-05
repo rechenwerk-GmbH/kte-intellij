@@ -24,7 +24,6 @@ public class KteTemplateSignatureServiceTest extends KtePluginFixtureSupport {
         KteTemplateSignatureService.TemplateSignature signature =
                 KteTemplateSignatureService.resolve(myFixture.getFile());
 
-        assertSame(myFixture.getFile(), signature.templateFile());
         assertEquals(7, signature.parameters().size());
         assertTrue(signature.parameter("profile").required());
         assertFalse(signature.parameter("profile").defaulted());
@@ -85,7 +84,6 @@ public class KteTemplateSignatureServiceTest extends KtePluginFixtureSupport {
 
         assertEquals("profile: Profile", text(profile.declarationRange()));
         assertEquals("profile", text(profile.nameRange()));
-        assertEquals("Profile", text(profile.typeRange()));
         assertEquals("\"Profile\"", text(title.defaultValueRange()));
     }
 

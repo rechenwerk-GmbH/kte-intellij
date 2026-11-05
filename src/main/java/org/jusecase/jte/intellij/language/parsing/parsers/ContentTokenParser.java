@@ -21,8 +21,11 @@ public class ContentTokenParser extends AbstractTokenParser {
             "@template"
     };
 
-    private boolean insideString;
+    private QuoteMode quoteMode = QuoteMode.NONE;
+    private int quoteDelimiterEnd;
     private int paramDepth = 0;
+
+    private enum QuoteMode { NONE, STRING, RAW_STRING, CHAR }
 
     public ContentTokenParser(Lexer lexer) {
         super(lexer);
@@ -30,7 +33,8 @@ public class ContentTokenParser extends AbstractTokenParser {
 
     @Override
     public boolean hasToken(int position) {
-        insideString = false;
+        quoteMode = QuoteMode.NONE;
+        quoteDelimiterEnd = -1;
         paramDepth = 0;
 
         if (shouldSkipWhitespaces(position) && isWhitespace(position)) {
@@ -98,13 +102,24 @@ public class ContentTokenParser extends AbstractTokenParser {
             return false;
         }
 
-        if (insideString) {
-            if (isBeginOf(position, '\"') && myBuffer.charAt(position - 1) != '\\') {
-                insideString = false;
-            }
+        if (position < quoteDelimiterEnd) {
             return false;
         }
 
+        if (quoteMode == QuoteMode.RAW_STRING) {
+            if (isBeginOf(position, "\"\"\"")) {
+                quoteMode = QuoteMode.NONE;
+                quoteDelimiterEnd = position + 3;
+            }
+            return false;
+        }
+        if (quoteMode == QuoteMode.STRING || quoteMode == QuoteMode.CHAR) {
+            char delimiter = quoteMode == QuoteMode.STRING ? '"' : '\'';
+            if (isBeginOf(position, delimiter) && !isEscaped(position)) {
+                quoteMode = QuoteMode.NONE;
+            }
+            return false;
+        }
         for (String keyword : KEYWORDS) {
             if (("@import".equals(keyword) || "@param".equals(keyword)) && lexer.isImportOrParamIgnored()) {
                 continue;
@@ -254,12 +269,31 @@ public class ContentTokenParser extends AbstractTokenParser {
             }
         }
 
-        if (!lexer.isInHtmlState() && isBeginOf(position, '\"')) {
-            insideString = true;
-            return false;
+        if (!lexer.isInHtmlState()) {
+            if (isBeginOf(position, "\"\"\"")) {
+                quoteMode = QuoteMode.RAW_STRING;
+                quoteDelimiterEnd = position + 3;
+                return false;
+            }
+            if (isBeginOf(position, '"')) {
+                quoteMode = QuoteMode.STRING;
+                return false;
+            }
+            if (isBeginOf(position, '\'')) {
+                quoteMode = QuoteMode.CHAR;
+                return false;
+            }
         }
 
         return false;
+    }
+
+    private boolean isEscaped(int position) {
+        int backslashes = 0;
+        for (int index = position - 1; index >= 0 && myBuffer.charAt(index) == '\\'; index--) {
+            backslashes++;
+        }
+        return backslashes % 2 != 0;
     }
 
     private boolean isTemplateArgumentAssignment(int start, int equals) {

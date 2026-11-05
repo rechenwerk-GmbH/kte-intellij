@@ -244,6 +244,31 @@ public class KteKotlinProjectionTest extends KtePluginFixtureSupport {
         }
     }
 
+    public void testTemplateArgumentExpressionsRemainExactlyMapped() {
+        addTemplateRoot();
+        myFixture.addFileToProject("components/card.kte", "@param value: Any?\n");
+        List<String> expressions = List.of(
+                "{ left: String, right: String -> left + right }",
+                "mapOf<String, Int>(\"a\" to 1)",
+                "','",
+                "\"\"\"a\"b,c\"\"\""
+        );
+        for (int index = 0; index < expressions.size(); index++) {
+            String expression = expressions.get(index);
+            String source = "@template.components.card(value = " + expression + ")\n";
+            myFixture.configureByText("argument-" + index + ".kte", source);
+
+            KteKotlinProjection projection = model().projection();
+            int sourceOffset = source.indexOf(expression);
+            Integer kotlinOffset = projection.mapTemplateOffsetToKotlin(sourceOffset);
+            assertNotNull(expression + ": " + projection.getText(), kotlinOffset);
+            TextRange kotlinRange = TextRange.from(kotlinOffset, expression.length());
+            assertEquals(expression, kotlinRange.substring(projection.getText()));
+            assertEquals(TextRange.from(sourceOffset, expression.length()),
+                    projection.mapKotlinRangeToTemplate(kotlinRange));
+        }
+    }
+
     private KteKotlinModelService.Model model() {
         return KteKotlinModelService.getInstance(getProject()).getModel(myFixture.getFile());
     }

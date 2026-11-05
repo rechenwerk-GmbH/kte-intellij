@@ -13,12 +13,30 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.kotlin.psi.KtClass;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
 import org.jetbrains.kotlin.psi.KtProperty;
+import org.jusecase.jte.intellij.language.template.KteTemplateSignatureService;
 
 import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class KteKotlinReferenceSearchTest extends KtePluginFixtureSupport {
+    public void testReferencesSearchFindsTemplateParameterUsagesInSameFile() throws Exception {
+        PsiFile file = myFixture.configureByText("simple.kte", """
+                @param showBreadcrumb: Boolean
+                @if(showBreadcrumb)
+                    ${showBreadcrumb}
+                @endif
+                """);
+        var parameter = KteTemplateSignatureService.resolve(file).parameter("showBreadcrumb");
+        assertNotNull(parameter);
+
+        Collection<PsiReference> references = searchReferencesInFileOffEdt(parameter.sourceElement(), file);
+
+        assertEquals(2, references.size());
+        assertTrue(references.stream().allMatch(reference ->
+                "showBreadcrumb".equals(reference.getCanonicalText())));
+    }
+
     public void testReferencesSearchFindsOutputPropertyReference() throws Exception {
         myFixture.addFileToProject("src/com/example/Profile.kt", """
                 package com.example

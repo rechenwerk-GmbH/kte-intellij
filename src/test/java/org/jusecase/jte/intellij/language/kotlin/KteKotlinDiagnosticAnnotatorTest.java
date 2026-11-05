@@ -3,6 +3,7 @@ package org.jusecase.jte.intellij.language.kotlin;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiDocumentManager;
 import org.jusecase.jte.intellij.language.KtePluginFixtureSupport;
 
@@ -84,6 +85,29 @@ public class KteKotlinDiagnosticAnnotatorTest extends KtePluginFixtureSupport {
         for (String name : List.of("missingCondition", "missingItems", "missingValue", "missingTitle")) {
             assertUnresolvedRange(errors, text, name);
         }
+    }
+
+    public void testExternalKotlinEditRefreshesEditorDiagnostics() {
+        PsiFile kotlinFile = myFixture.addFileToProject("src/com/example/Holder.kt", """
+                package com.example
+                class Holder(val value: String)
+                """);
+        String source = """
+                @import com.example.Holder
+                @param holder: Holder
+                ${holder.value}
+                """;
+        myFixture.configureByText("external.kte", source);
+        assertTrue(unresolved().toString(), unresolved().isEmpty());
+
+        WriteCommandAction.runWriteCommandAction(getProject(), () -> {
+            var document = PsiDocumentManager.getInstance(getProject()).getDocument(kotlinFile);
+            assertNotNull(document);
+            document.setText("package com.example\nclass Holder(val renamed: String)\n");
+            PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+        });
+
+        assertUnresolvedRange(unresolved(), source, "value");
     }
 
     private List<HighlightInfo> unresolved() {
